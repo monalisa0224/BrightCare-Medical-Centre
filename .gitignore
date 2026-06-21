@@ -1,0 +1,8 @@
+build/
+BrightCareDB/
+derby.log
+sources.txt
+server_error.txt
+server_output.txt
+server_pid.txt
+nbproject/private/
