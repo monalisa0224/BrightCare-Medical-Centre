@@ -4,3 +4,4 @@ derby.log
 build/
 *.txt
 nbproject/private/
+.opencode/plans/
