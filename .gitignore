@@ -1,8 +1,6 @@
-build/
+*.jar
 BrightCareDB/
 derby.log
-sources.txt
-server_error.txt
-server_output.txt
-server_pid.txt
+build/
+*.txt
 nbproject/private/
