@@ -14,6 +14,8 @@ public class DatabaseSetup {
         try {
             createTables();
             seedAdmin();
+            seedTestData();
+            insertSlotsDirect();
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {
             e.printStackTrace();
@@ -56,11 +58,55 @@ public class DatabaseSetup {
                     + "FOREIGN KEY (AdminID) REFERENCES USERS(UserID))");
             System.out.println("Created table: REPORTS");
         }
+        
+        if (!tableExists("PATIENTS")) {
+            stmt.execute("CREATE TABLE PATIENTS ("
+                    + "PatientID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
+                    + "Username VARCHAR(50) UNIQUE NOT NULL, "
+                    + "ContactNumber VARCHAR(20), "
+                    + "Address VARCHAR(200), "
+                    + "FOREIGN KEY (Username) REFERENCES USERS(Username))");
+            System.out.println("Created table: PATIENTS");
+        }
+
+        if (!tableExists("DOCTORS")) {
+            stmt.execute("CREATE TABLE DOCTORS ("
+                    + "DoctorID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
+                    + "Username VARCHAR(50) UNIQUE NOT NULL, "
+                    + "DoctorName VARCHAR(100) NOT NULL, "
+                    + "Specialization VARCHAR(100), "
+                    + "FOREIGN KEY (Username) REFERENCES USERS(Username))");
+            System.out.println("Created table: DOCTORS");
+        }
+
+        if (!tableExists("DOCTOR_SCHEDULE")) {
+            stmt.execute("CREATE TABLE DOCTOR_SCHEDULE ("
+                    + "ScheduleID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
+                    + "DoctorID INT NOT NULL, "
+                    + "ScheduleDate VARCHAR(20) NOT NULL, "
+                    + "TimeSlot VARCHAR(10) NOT NULL, "
+                    + "IsAvailable BOOLEAN DEFAULT TRUE, "
+                    + "FOREIGN KEY (DoctorID) REFERENCES DOCTORS(DoctorID))");
+            System.out.println("Created table: DOCTOR_SCHEDULE");
+        }
+
+        if (!tableExists("APPOINTMENTS")) {
+            stmt.execute("CREATE TABLE APPOINTMENTS ("
+                    + "AppointmentID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
+                    + "Username VARCHAR(50) NOT NULL, "
+                    + "DoctorID INT NOT NULL, "
+                    + "ApptDate VARCHAR(20) NOT NULL, "
+                    + "ApptTime VARCHAR(10) NOT NULL, "
+                    + "Status VARCHAR(20) DEFAULT 'UPCOMING', "
+                    + "FOREIGN KEY (Username) REFERENCES USERS(Username), "
+                    + "FOREIGN KEY (DoctorID) REFERENCES DOCTORS(DoctorID))");
+            System.out.println("Created table: APPOINTMENTS");
+        }
 
         stmt.close();
     }
-
-    private static boolean tableExists(String tableName) throws Exception {
+    
+       private static boolean tableExists(String tableName) throws Exception {
         Connection conn = DerbyConnection.getConnection();
         DatabaseMetaData meta = conn.getMetaData();
         ResultSet rs = meta.getTables(null, null, tableName.toUpperCase(), null);
@@ -90,6 +136,143 @@ public class DatabaseSetup {
             System.out.println("Seeded default admin account.");
         }
     }
+    
+    private static void seedTestData() throws Exception {
+        Connection conn = DerbyConnection.getConnection();
+
+        // Add test patient
+        PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM USERS WHERE Username = ?");
+        ps.setString(1, "patient1");
+        ResultSet rs = ps.executeQuery();
+        rs.next();
+        if (rs.getInt(1) == 0) {
+            PreparedStatement insert = conn.prepareStatement(
+                    "INSERT INTO USERS (Username, PasswordHash, Role) VALUES (?, ?, ?)");
+            insert.setString(1, "patient1");
+            insert.setString(2, hashPassword("patient123"));
+            insert.setString(3, "PATIENT");
+            insert.executeUpdate();
+            insert.close();
+
+            PreparedStatement insertPatient = conn.prepareStatement(
+                    "INSERT INTO PATIENTS (Username, ContactNumber, Address) VALUES (?, ?, ?)");
+            insertPatient.setString(1, "patient1");
+            insertPatient.setString(2, "0123456789");
+            insertPatient.setString(3, "Kuala Lumpur");
+            insertPatient.executeUpdate();
+            insertPatient.close();
+            System.out.println("Seeded test patient: patient1 / patient123");
+        }
+
+        // Add test doctor
+        ps.setString(1, "doctor1");
+        rs = ps.executeQuery();
+        rs.next();
+        if (rs.getInt(1) == 0) {
+            PreparedStatement insert = conn.prepareStatement(
+                    "INSERT INTO USERS (Username, PasswordHash, Role) VALUES (?, ?, ?)");
+            insert.setString(1, "doctor1");
+            insert.setString(2, hashPassword("doctor123"));
+            insert.setString(3, "DOCTOR");
+            insert.executeUpdate();
+            insert.close();
+
+            PreparedStatement insertDoctor = conn.prepareStatement(
+                    "INSERT INTO DOCTORS (Username, DoctorName, Specialization) VALUES (?, ?, ?)");
+            insertDoctor.setString(1, "doctor1");
+            insertDoctor.setString(2, "Dr. Ahmad");
+            insertDoctor.setString(3, "General Practitioner");
+            insertDoctor.executeUpdate();
+            insertDoctor.close();
+            System.out.println("Seeded test doctor: Dr. Ahmad");
+
+            // Add available time slots for doctor1 (DoctorID = 1)
+            PreparedStatement insertSlot = conn.prepareStatement(
+                    "INSERT INTO DOCTOR_SCHEDULE (DoctorID, ScheduleDate, TimeSlot, IsAvailable) "
+                    + "VALUES (1, ?, ?, true)");
+            String[] slots = {"09:00", "10:00", "11:00", "14:00", "15:00"};
+            for (String slot : slots) {
+                insertSlot.setString(1, "2026-02-10");
+                insertSlot.setString(2, slot);
+                insertSlot.executeUpdate();
+            }
+            insertSlot.close();
+            System.out.println("Seeded doctor schedule slots.");
+        }
+
+        ps.close();
+        rs.close();
+        
+        // Seed doctor schedule slots if empty
+        PreparedStatement checkSlots = conn.prepareStatement(
+                "SELECT COUNT(*) FROM DOCTOR_SCHEDULE");
+        ResultSet slotsRs = checkSlots.executeQuery();
+        slotsRs.next();
+        if (slotsRs.getInt(1) == 0) {
+            PreparedStatement insertSlot = conn.prepareStatement(
+                    "INSERT INTO DOCTOR_SCHEDULE (DoctorID, ScheduleDate, TimeSlot, IsAvailable) "
+                    + "VALUES (1, ?, ?, true)");
+            String[] slots2 = {"09:00", "10:00", "11:00", "14:00", "15:00"};
+            for (String slot : slots2) {
+                insertSlot.setString(1, "2026-02-10");
+                insertSlot.setString(2, slot);
+                insertSlot.executeUpdate();
+            }
+            insertSlot.close();
+            System.out.println("Re-seeded doctor schedule slots.");
+        }
+        slotsRs.close();
+        checkSlots.close();
+    }
+    
+    
+    private static void insertSlotsDirect() throws Exception {
+    Connection conn = DerbyConnection.getConnection();
+    
+    // Get the actual DoctorID from DOCTORS table
+    PreparedStatement getDoctorId = conn.prepareStatement(
+            "SELECT DoctorID FROM DOCTORS WHERE Username = 'doctor1'");
+    ResultSet drRs = getDoctorId.executeQuery();
+    
+    if (!drRs.next()) {
+        System.out.println("Doctor1 not found in DOCTORS table - skipping slot insert");
+        drRs.close();
+        getDoctorId.close();
+        return;
+    }
+    
+    int actualDoctorId = drRs.getInt("DoctorID");
+    drRs.close();
+    getDoctorId.close();
+    System.out.println("Found doctor1 with DoctorID = " + actualDoctorId);
+    
+    // Check if slots already exist for this doctor
+    PreparedStatement check = conn.prepareStatement(
+            "SELECT COUNT(*) FROM DOCTOR_SCHEDULE WHERE DoctorID = ? AND ScheduleDate = '2026-02-10'");
+    check.setInt(1, actualDoctorId);
+    ResultSet rs = check.executeQuery();
+    rs.next();
+    int count = rs.getInt(1);
+    rs.close();
+    check.close();
+    
+    if (count == 0) {
+        String[] slots = {"09:00", "10:00", "11:00", "14:00", "15:00"};
+        for (String slot : slots) {
+            PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO DOCTOR_SCHEDULE (DoctorID, ScheduleDate, TimeSlot, IsAvailable) "
+                + "VALUES (?, '2026-02-10', ?, true)");
+            ps.setInt(1, actualDoctorId);
+            ps.setString(2, slot);
+            ps.executeUpdate();
+            ps.close();
+        }
+        System.out.println("Slots inserted for DoctorID = " + actualDoctorId);
+    } else {
+        System.out.println("Slots already exist for DoctorID=" + actualDoctorId + " count=" + count);
+    }
+}
 
     public static String hashPassword(String password) {
         try {

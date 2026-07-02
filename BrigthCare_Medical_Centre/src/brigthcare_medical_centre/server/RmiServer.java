@@ -10,6 +10,8 @@ import brigthcare_medical_centre.common.ReportInterface;
 import brigthcare_medical_centre.database.DatabaseSetup;
 import brigthcare_medical_centre.report.ReportImpl;
 import brigthcare_medical_centre.util.Constants;
+import brigthcare_medical_centre.common.PatientInterface;
+import brigthcare_medical_centre.server.PatientImpl;
 
 public class RmiServer {
 
@@ -33,6 +35,10 @@ public class RmiServer {
             ReportInterface reportService = new ReportImpl();
             Naming.rebind(Constants.REPORT_SERVICE, reportService);
             System.out.println("ReportService bound.");
+            
+            PatientInterface patientService = new PatientImpl();
+            Naming.rebind(Constants.PATIENT_SERVICE, patientService);
+            System.out.println("PatientService bound.");
 
             System.out.println("BrightCare Medical Centre RMI Server is ready.");
         } catch (Exception e) {
