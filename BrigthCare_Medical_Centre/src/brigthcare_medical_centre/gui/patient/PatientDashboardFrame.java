@@ -88,25 +88,55 @@ public class PatientDashboardFrame extends JFrame {
     }
 
     private void doUpdateInfo() {
-        JTextField contactField = new JTextField(15);
-        JTextField addressField = new JTextField(15);
+    try {
+        // Load current profile first
+        String[] profile = patientService.getPatientProfile(loggedInUsername);
+        String currentContact = (profile != null && profile[1] != null) ? profile[1] : "";
+        String currentAddress = (profile != null && profile[2] != null) ? profile[2] : "";
+
+        JTextField contactField = new JTextField(currentContact, 15);
+        JTextField addressField = new JTextField(currentAddress, 15);
         JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
-        panel.add(new JLabel("New Contact Number:"));
+        panel.add(new JLabel("Contact Number:"));
         panel.add(contactField);
-        panel.add(new JLabel("New Address:"));
+        panel.add(new JLabel("Address:"));
         panel.add(addressField);
 
         int result = JOptionPane.showConfirmDialog(this, panel,
                 "Update Personal Info", JOptionPane.OK_CANCEL_OPTION);
-        if (result == JOptionPane.OK_OPTION) {
-            try {
-                boolean ok = patientService.updatePersonalInfo(
-                        loggedInUsername, contactField.getText(), addressField.getText());
-                JOptionPane.showMessageDialog(this,
-                        ok ? "Info updated successfully!" : "Update failed. Please try again.");
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-            }
+        if (result != JOptionPane.OK_OPTION) return;
+
+        String newContact = contactField.getText().trim();
+        String newAddress = addressField.getText().trim();
+
+        // Validate phone number — only allow digits, spaces, dashes, plus sign
+        if (!newContact.isEmpty() && !newContact.matches("[0-9+\\-\\s]+")) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid contact number!\nOnly numbers, +, - and spaces are allowed.",
+                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validate phone number length
+        String digitsOnly = newContact.replaceAll("[^0-9]", "");
+        if (!newContact.isEmpty() && (digitsOnly.length() < 7 || digitsOnly.length() > 15)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid contact number!\nMust be between 7 and 15 digits.",
+                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // If field left blank, keep existing value
+        if (newContact.isEmpty()) newContact = currentContact;
+        if (newAddress.isEmpty()) newAddress = currentAddress;
+
+        boolean ok = patientService.updatePersonalInfo(
+                loggedInUsername, newContact, newAddress);
+        JOptionPane.showMessageDialog(this,
+                ok ? "Info updated successfully!" : "Update failed. Please try again.");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
@@ -207,15 +237,59 @@ public class PatientDashboardFrame extends JFrame {
     }
 
     private void doCancelAppointment() {
-        String input = JOptionPane.showInputDialog(this, "Enter Appointment ID to cancel:");
-        if (input != null && !input.isEmpty()) {
-            try {
-                boolean ok = patientService.cancelAppointment(Integer.parseInt(input.trim()));
-                JOptionPane.showMessageDialog(this,
-                        ok ? "Appointment cancelled successfully!" : "Could not cancel. Please check the ID.");
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-            }
+    try {
+        // Load upcoming appointments
+        List<String[]> appointments = patientService.viewAppointmentSchedules(loggedInUsername);
+
+        if (appointments.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "You have no upcoming appointments to cancel.",
+                    "No Appointments", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Build dropdown: "ID 201 | Dr. Ahmad | 2026-02-10 | 09:00"
+        String[] options = new String[appointments.size()];
+        for (int i = 0; i < appointments.size(); i++) {
+            String[] a = appointments.get(i);
+            options[i] = "ID: " + a[0] + "  |  " + a[1] + "  |  " + a[2] + "  |  " + a[3];
+        }
+
+        JComboBox<String> apptDropdown = new JComboBox<>(options);
+        JPanel panel = new JPanel(new GridLayout(1, 2, 5, 5));
+        panel.add(new JLabel("Select Appointment:"));
+        panel.add(apptDropdown);
+
+        int result = JOptionPane.showConfirmDialog(this, panel,
+                "Cancel Appointment", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) return;
+
+        // Get selected appointment ID
+        int selectedIndex = apptDropdown.getSelectedIndex();
+        int appointmentId = Integer.parseInt(appointments.get(selectedIndex)[0]);
+        String selectedInfo = appointments.get(selectedIndex)[1]
+                + " on " + appointments.get(selectedIndex)[2]
+                + " at " + appointments.get(selectedIndex)[3];
+
+        // Confirm before cancelling
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to cancel this appointment?\n\n"
+                + "Doctor: " + appointments.get(selectedIndex)[1] + "\n"
+                + "Date: " + appointments.get(selectedIndex)[2] + "\n"
+                + "Time: " + appointments.get(selectedIndex)[3],
+                "Confirm Cancellation", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        boolean ok = patientService.cancelAppointment(appointmentId);
+        JOptionPane.showMessageDialog(this,
+                ok ? "Appointment with " + selectedInfo + " has been cancelled successfully!"
+                   : "Could not cancel. Please try again.",
+                ok ? "Cancelled" : "Error",
+                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
