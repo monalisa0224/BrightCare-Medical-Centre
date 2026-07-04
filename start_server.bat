@@ -1,7 +1,7 @@
 @echo off
 title BrightCare Server
 set CLASSES=build\classes
-set LIBS=lib\derby.jar;lib\derbyshared.jar
+set LIBS=lib\derby.jar
 
 if not exist "%CLASSES%" (
     echo Compiling first...

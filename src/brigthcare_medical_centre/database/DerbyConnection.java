@@ -11,7 +11,7 @@ public class DerbyConnection {
 public static synchronized Connection getConnection() throws SQLException {
     if (connection == null || connection.isClosed()) {
         try {
-            Class.forName("org.apache.derby.iapi.jdbc.AutoloadedDriver");
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
         } catch (ClassNotFoundException e) {
             throw new SQLException("Derby driver not found: " + e.getMessage());
         }

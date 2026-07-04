@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 set CLASSES=build\classes
-set LIBS=lib\derby.jar;lib\derbyshared.jar
+set LIBS=lib\derby.jar
 set SRCDIR=src
 
 if not exist "%CLASSES%" mkdir "%CLASSES%"
