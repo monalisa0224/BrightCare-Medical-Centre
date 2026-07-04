@@ -1,6 +1,93 @@
-# BrightCare Medical Centre
+# BrightCare Medical Centre — Clinic Management System
 
-Distributed System Group Assignment regarding BrightCare Medical Centre.
+A distributed clinic management system built with **Java RMI**, **Apache Derby** (embedded database), and **Java Swing GUI**. Developed as a group assignment for Distributed Computer Systems.
+
+## Quick Start
+
+### Prerequisites
+- Java 8+ (JDK)
+- No database installation needed — Derby runs embedded
+
+### Run the project
+
+**Step 1 — Compile all source files:**
+```
+Double-click `build.bat`
+```
+or from terminal:
+```
+build.bat
+```
+
+**Step 2 — Start the RMI Server (keep this window open):**
+```
+Double-click `start_server.bat`
+```
+or from terminal:
+```
+start_server.bat
+```
+
+**Step 3 — Launch a client (in a separate terminal):**
+
+| Client | Command | Login |
+|--------|---------|-------|
+| Admin | `start_admin.bat` | `admin` / `admin123` |
+| Patient | `start_patient.bat` | `patient1` / `patient123` |
+| Doctor | *(coming soon)* | `doctor1` / `doctor123` |
+
+### Test Accounts (auto-seeded)
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `admin` | `admin123` |
+| Patient | `patient1` | `patient123` |
+| Doctor | `doctor1` | `doctor123` |
+
+## Project Structure
+
+```
+src/brigthcare_medical_centre/
+├── server/         RMI server startup
+├── common/         Remote interfaces (shared contract)
+├── auth/           Login & authentication
+├── admin/          Admin operations
+├── report/         Report generation (3 types)
+├── patient/        Patient module
+├── database/       Derby connection, setup, audit logging
+├── gui/
+│   ├── admin/      Admin Swing GUI
+│   └── patient/    Patient Swing GUI
+└── util/           Constants, date helpers, SSL stubs
+```
+
+## Technology Stack
+
+- **Java RMI** — Remote Method Invocation for client-server communication
+- **Apache Derby** — Embedded SQL database (zero-config)
+- **Java Swing** — Desktop GUI
+- **Serialization** — RMI parameter passing across network
+
+## Team Members & Responsibilities
+
+| Member | Module | Key Files |
+|--------|--------|-----------|
+| Member 1 | Receptionist + Security | Patient registration, SSL, role-based access |
+| Member 2 | Doctor | Consultation notes, appointment lists, medical history |
+| Member 3 | Patient | Book/cancel appointments, check availability, view history |
+| Member 4 | Admin + Server | RMI server, report generation, auth, database setup |
+
+## Database Tables
+
+| Table | Owned By | Purpose |
+|-------|----------|---------|
+| USERS | Member 4 | Central authentication for all roles |
+| LOGS | Member 4 | Audit trail |
+| REPORTS | Member 4 | Stored generated reports |
+| PATIENTS | Member 1 | Patient registration details |
+| DOCTORS | Member 1 | Doctor profiles |
+| DOCTOR_SCHEDULE | Member 3 | Available time slots |
+| APPOINTMENTS | Member 3 | Appointment bookings |
 
 ## Project SOP for Coding
 
