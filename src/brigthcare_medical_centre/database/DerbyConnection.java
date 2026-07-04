@@ -8,12 +8,17 @@ import brigthcare_medical_centre.util.Constants;
 public class DerbyConnection {
     private static Connection connection;
 
-    public static synchronized Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(Constants.DB_URL);
+public static synchronized Connection getConnection() throws SQLException {
+    if (connection == null || connection.isClosed()) {
+        try {
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Derby driver not found: " + e.getMessage());
         }
-        return connection;
+        connection = DriverManager.getConnection(Constants.DB_URL);
     }
+    return connection;
+}
 
     public static synchronized void closeConnection() {
         try {

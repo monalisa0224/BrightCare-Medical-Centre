@@ -11,4 +11,6 @@ public class Constants {
     public static final String REPORT_SERVICE = "ReportService";
     public static final String DEFAULT_ADMIN_USER = "admin";
     public static final String DEFAULT_ADMIN_PASS = "admin123";
+    public static final String PATIENT_SERVICE = "PatientService";
+    public static final String DOCTOR_SERVICE = "DoctorService";
 }
