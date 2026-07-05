@@ -1,8 +1,9 @@
-build/*.jar
-dist/*.jar
+build/
+dist/
+*.class
+*.txt
+*.jar
 BrightCareDB/
 derby.log
-build/
-*.txt
 nbproject/private/
 .opencode/plans/

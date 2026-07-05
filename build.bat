@@ -7,8 +7,9 @@ set SRCDIR=src
 if not exist "%CLASSES%" mkdir "%CLASSES%"
 
 echo Compiling all source files...
-dir /s /B "%SRCDIR%\*.java" > sources.txt
-javac -cp "%LIBS%" -d "%CLASSES%" @sources.txt
+set FILES=
+for /r %SRCDIR% %%f in (*.java) do set FILES=!FILES! "%%f"
+javac -cp "%LIBS%" -d "%CLASSES%" !FILES!
 
 if %errorlevel% equ 0 (
     echo Build successful.
