@@ -5,3 +5,4 @@ build/
 *.txt
 nbproject/private/
 .opencode/plans/
+/dist/
