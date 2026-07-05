@@ -11,7 +11,7 @@ public class ServerDriver {
         server.start();
 
         System.out.println("Press Enter to stop the server...");
-        try {
+                try {
             new BufferedReader(new InputStreamReader(System.in)).readLine();
         } catch (Exception e) {
             e.printStackTrace();

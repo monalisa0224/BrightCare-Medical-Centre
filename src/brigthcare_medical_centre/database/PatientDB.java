@@ -28,7 +28,7 @@ public class PatientDB {
     // Book appointment
     public boolean bookAppointment(String username, int doctorId, String date, String time) {
         String sql = "INSERT INTO APPOINTMENTS (Username, DoctorID, ApptDate, ApptTime, Status) "
-                   + "VALUES (?, ?, ?, ?, 'UPCOMING')";
+                   + "VALUES (?, ?, ?, ?, 'PENDING')";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
@@ -101,7 +101,7 @@ public class PatientDB {
         List<String[]> list = new ArrayList<>();
         String sql = "SELECT a.AppointmentID, d.DoctorName, a.ApptDate, a.ApptTime, a.Status "
                    + "FROM APPOINTMENTS a JOIN DOCTORS d ON a.DoctorID = d.DoctorID "
-                   + "WHERE a.Username = ? AND a.Status = 'UPCOMING' "
+                   + "WHERE a.Username = ? AND a.Status IN ('PENDING', 'ACCEPTED') "
                    + "ORDER BY a.ApptDate, a.ApptTime";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

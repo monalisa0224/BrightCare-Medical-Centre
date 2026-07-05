@@ -75,8 +75,12 @@ public class DatabaseSetup {
                     + "Username VARCHAR(50) UNIQUE NOT NULL, "
                     + "DoctorName VARCHAR(100) NOT NULL, "
                     + "Specialization VARCHAR(100), "
+                    + "ContactNumber VARCHAR(20), "
                     + "FOREIGN KEY (Username) REFERENCES USERS(Username))");
             System.out.println("Created table: DOCTORS");
+        } else if (!columnExists("DOCTORS", "ContactNumber")) {
+            stmt.execute("ALTER TABLE DOCTORS ADD COLUMN ContactNumber VARCHAR(20)");
+            System.out.println("Added ContactNumber column to DOCTORS");
         }
 
         if (!tableExists("DOCTOR_SCHEDULE")) {
@@ -97,10 +101,28 @@ public class DatabaseSetup {
                     + "DoctorID INT NOT NULL, "
                     + "ApptDate VARCHAR(20) NOT NULL, "
                     + "ApptTime VARCHAR(10) NOT NULL, "
-                    + "Status VARCHAR(20) DEFAULT 'UPCOMING', "
+                    + "Status VARCHAR(20) DEFAULT 'PENDING', "
                     + "FOREIGN KEY (Username) REFERENCES USERS(Username), "
                     + "FOREIGN KEY (DoctorID) REFERENCES DOCTORS(DoctorID))");
             System.out.println("Created table: APPOINTMENTS");
+        }
+
+        if (!tableExists("CONSULTATION_NOTES")) {
+            stmt.execute("CREATE TABLE CONSULTATION_NOTES ("
+                    + "NoteID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
+                    + "AppointmentID INT NOT NULL, "
+                    + "DoctorID INT NOT NULL, "
+                    + "PatientUsername VARCHAR(50) NOT NULL, "
+                    + "ConsultationDate VARCHAR(20) NOT NULL, "
+                    + "Diagnosis VARCHAR(500), "
+                    + "Treatment VARCHAR(500), "
+                    + "Prescription VARCHAR(500), "
+                    + "Notes VARCHAR(1000), "
+                    + "CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                    + "FOREIGN KEY (AppointmentID) REFERENCES APPOINTMENTS(AppointmentID), "
+                    + "FOREIGN KEY (DoctorID) REFERENCES DOCTORS(DoctorID), "
+                    + "FOREIGN KEY (PatientUsername) REFERENCES USERS(Username))");
+            System.out.println("Created table: CONSULTATION_NOTES");
         }
 
         stmt.close();
@@ -110,6 +132,15 @@ public class DatabaseSetup {
         Connection conn = DerbyConnection.getConnection();
         DatabaseMetaData meta = conn.getMetaData();
         ResultSet rs = meta.getTables(null, null, tableName.toUpperCase(), null);
+        boolean exists = rs.next();
+        rs.close();
+        return exists;
+    }
+
+    private static boolean columnExists(String tableName, String columnName) throws Exception {
+        Connection conn = DerbyConnection.getConnection();
+        DatabaseMetaData meta = conn.getMetaData();
+        ResultSet rs = meta.getColumns(null, null, tableName.toUpperCase(), columnName.toUpperCase());
         boolean exists = rs.next();
         rs.close();
         return exists;
