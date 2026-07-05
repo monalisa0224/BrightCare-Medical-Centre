@@ -127,7 +127,7 @@ public class PatientDB {
         List<String[]> list = new ArrayList<>();
         String sql = "SELECT a.AppointmentID, d.DoctorName, a.ApptDate, a.ApptTime, a.Status "
                    + "FROM APPOINTMENTS a JOIN DOCTORS d ON a.DoctorID = d.DoctorID "
-                   + "WHERE a.Username = ? AND a.Status <> 'UPCOMING' "
+                   + "WHERE a.Username = ? AND a.Status IN ('COMPLETED', 'CANCELLED', 'REJECTED') "
                    + "ORDER BY a.ApptDate DESC";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

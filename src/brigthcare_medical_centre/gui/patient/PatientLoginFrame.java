@@ -33,49 +33,145 @@ public class PatientLoginFrame extends JFrame {
 
     private void buildUI() {
         setTitle("BrightCare Medical Centre - Patient Login");
-        setSize(400, 300);
+        setSize(420, 620);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(41, 128, 185));
 
-        // Header
-        JLabel header = new JLabel("Patient Login", SwingConstants.CENTER);
-        header.setFont(new Font("Arial", Font.BOLD, 20));
-        header.setOpaque(true);
-        header.setBackground(new Color(41, 128, 185));
-        header.setForeground(Color.WHITE);
-        header.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        add(header, BorderLayout.NORTH);
+        // ── TOP BRANDING AREA ──
+        JPanel brandPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+        brandPanel.setBackground(new Color(41, 128, 185));
+        brandPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 15, 30));
 
-        // Form panel
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 20, 40));
+        JLabel hospitalName = new JLabel("BrightCare", SwingConstants.CENTER);
+        hospitalName.setFont(new Font("Times New Roman", Font.BOLD, 34));
+        hospitalName.setForeground(Color.WHITE);
+
+        JLabel hospitalSub = new JLabel("Medical Centre", SwingConstants.CENTER);
+        hospitalSub.setFont(new Font("Times New Roman", Font.PLAIN, 16));
+        hospitalSub.setForeground(new Color(200, 230, 255));
+
+        JLabel tagline = new JLabel("Patient Portal", SwingConstants.CENTER);
+        tagline.setFont(new Font("Times New Roman", Font.ITALIC, 13));
+        tagline.setForeground(new Color(180, 215, 255));
+
+        brandPanel.add(hospitalName);
+        brandPanel.add(hospitalSub);
+        brandPanel.add(tagline);
+        add(brandPanel, BorderLayout.NORTH);
+
+        // ── LOGIN CARD ──
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createEmptyBorder(20, 35, 20, 35));
+
+        // Card title
+        JPanel cardHeader = new JPanel(new GridLayout(2, 1, 0, 4));
+        cardHeader.setBackground(Color.WHITE);
+        cardHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel loginTitle = new JLabel("Welcome Back");
+        loginTitle.setFont(new Font("Times New Roman", Font.BOLD, 22));
+        loginTitle.setForeground(new Color(44, 62, 80));
+
+        JLabel loginSub = new JLabel("Sign in to your patient account");
+        loginSub.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+        loginSub.setForeground(new Color(150, 150, 150));
+
+        cardHeader.add(loginTitle);
+        cardHeader.add(loginSub);
+        card.add(cardHeader, BorderLayout.NORTH);
+
+        // Form fields
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(Color.WHITE);
+
+        // Username field
+        JLabel usernameLabel = new JLabel("Username / IC");
+        usernameLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        usernameLabel.setForeground(new Color(44, 62, 80));
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         usernameField = new JTextField();
+        usernameField.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(10, 12, 10, 12)
+        ));
+
+        // Password field
+        JLabel passwordLabel = new JLabel("Password");
+        passwordLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        passwordLabel.setForeground(new Color(44, 62, 80));
+        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(10, 12, 10, 12)
+        ));
 
-        formPanel.add(new JLabel("Username / IC:"));
-        formPanel.add(usernameField);
-        formPanel.add(new JLabel("Password:"));
-        formPanel.add(passwordField);
-
-        JButton loginBtn = new JButton("Login");
+        // Login button
+        JButton loginBtn = new JButton("Sign In");
+        loginBtn.setFont(new Font("Times New Roman", Font.BOLD, 14));
         loginBtn.setBackground(new Color(41, 128, 185));
         loginBtn.setForeground(Color.WHITE);
-        loginBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        formPanel.add(new JLabel()); // empty cell
+        loginBtn.setFocusPainted(false);
+        loginBtn.setBorderPainted(false);
+        loginBtn.setOpaque(true);
+        loginBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        loginBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        loginBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Hover effect
+        loginBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                loginBtn.setBackground(new Color(31, 97, 141));
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                loginBtn.setBackground(new Color(41, 128, 185));
+            }
+        });
+
+        // Assemble form
+        formPanel.add(usernameLabel);
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(usernameField);
+        formPanel.add(Box.createVerticalStrut(10));
+        formPanel.add(passwordLabel);
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(passwordField);
+        formPanel.add(Box.createVerticalStrut(15));
         formPanel.add(loginBtn);
 
-        add(formPanel, BorderLayout.CENTER);
+        card.add(formPanel, BorderLayout.CENTER);
 
-        // Footer
-        JLabel footer = new JLabel("BrightCare Medical Centre", SwingConstants.CENTER);
-        footer.setFont(new Font("Arial", Font.ITALIC, 11));
-        footer.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
-        add(footer, BorderLayout.SOUTH);
+        // ── BOTTOM NOTE ──
+        JPanel notePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        notePanel.setBackground(Color.WHITE);
+        notePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        JLabel noteLabel = new JLabel("Contact reception if you need help accessing your account.");
+        noteLabel.setFont(new Font("Times New Roman", Font.ITALIC, 11));
+        noteLabel.setForeground(new Color(180, 180, 180));
+        notePanel.add(noteLabel);
+        card.add(notePanel, BorderLayout.SOUTH);
 
-        // Login action
+        // ── WRAPPER (blue sides) ──
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(new Color(41, 128, 185));
+        wrapper.setBorder(BorderFactory.createEmptyBorder(0, 25, 30, 25));
+        wrapper.add(card, BorderLayout.CENTER);
+        add(wrapper, BorderLayout.CENTER);
+
+        // Login actions
         loginBtn.addActionListener(e -> doLogin());
-        passwordField.addActionListener(e -> doLogin()); // Enter key also logs in
+        passwordField.addActionListener(e -> doLogin());
 
         setLocationRelativeTo(null);
         setVisible(true);
