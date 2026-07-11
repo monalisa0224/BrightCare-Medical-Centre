@@ -22,6 +22,9 @@ public class AdminDashboardFrame extends JFrame {
         LogViewerPanel logViewerPanel = new LogViewerPanel(adminService);
         tabbedPane.addTab("Audit Logs", logViewerPanel);
 
+        UserManagementPanel userManagementPanel = new UserManagementPanel(adminService);
+        tabbedPane.addTab("User Management", userManagementPanel);
+
         add(tabbedPane, BorderLayout.CENTER);
 
         JLabel statusLabel = new JLabel("Logged in as: " + admin.getUsername() + " (Admin)");
