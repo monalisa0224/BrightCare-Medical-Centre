@@ -13,4 +13,6 @@ public class Constants {
     public static final String DEFAULT_ADMIN_PASS = "admin123";
     public static final String PATIENT_SERVICE = "PatientService";
     public static final String DOCTOR_SERVICE = "DoctorService";
+    public static String RECEPTIONIST_SERVICE = "ReceptionistService";
+    
 }

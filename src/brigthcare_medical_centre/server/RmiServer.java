@@ -14,6 +14,8 @@ import brigthcare_medical_centre.common.PatientInterface;
 import brigthcare_medical_centre.server.PatientImpl;
 import brigthcare_medical_centre.common.DoctorInterface;
 import brigthcare_medical_centre.server.DoctorImpl;
+import brigthcare_medical_centre.common.ReceptionistInterface;
+import brigthcare_medical_centre.server.ReceptionistImpl;
 
 public class RmiServer {
 
@@ -45,6 +47,10 @@ public class RmiServer {
             DoctorInterface doctorService = new DoctorImpl();
             Naming.rebind(Constants.DOCTOR_SERVICE, doctorService);
             System.out.println("DoctorService bound.");
+            
+            ReceptionistInterface receptionistService = new ReceptionistImpl();
+            Naming.rebind(Constants.RECEPTIONIST_SERVICE, receptionistService);
+            System.out.println("ReceptionistService bound.");
 
             System.out.println("BrightCare Medical Centre RMI Server is ready.");
         } catch (Exception e) {
