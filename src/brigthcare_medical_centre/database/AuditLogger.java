@@ -11,7 +11,11 @@ public class AuditLogger {
             Connection conn = DerbyConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO LOGS (UserID, Action, Timestamp, Details) VALUES (?, ?, ?, ?)");
-            ps.setInt(1, userID);
+            if (userID > 0) {
+                ps.setInt(1, userID);
+            } else {
+                ps.setNull(1, java.sql.Types.INTEGER);
+            }
             ps.setString(2, action);
             ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             ps.setString(4, details);

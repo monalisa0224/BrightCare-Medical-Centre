@@ -5,12 +5,13 @@ import java.rmi.server.UnicastRemoteObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import brigthcare_medical_centre.common.AdminInterface;
-import brigthcare_medical_centre.auth.User;
 import brigthcare_medical_centre.auth.UserRole;
 import brigthcare_medical_centre.database.AuditLogger;
+import brigthcare_medical_centre.database.AdminProvisioningDefaults;
 import brigthcare_medical_centre.database.DatabaseSetup;
 import brigthcare_medical_centre.database.DerbyConnection;
 
@@ -76,44 +77,38 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
 
     @Override
     public boolean registerUser(String username, String password, UserRole role) throws RemoteException {
-        try {
-            Connection conn = DerbyConnection.getConnection();
-            
-            // Check if username already exists
-            PreparedStatement checkPs = conn.prepareStatement("SELECT UserID FROM USERS WHERE Username = ?");
-            checkPs.setString(1, username);
-            ResultSet rs = checkPs.executeQuery();
-            if (rs.next()) {
-                rs.close();
-                checkPs.close();
-                return false; // Username already exists
-            }
-            rs.close();
-            checkPs.close();
+        try (Connection conn = DerbyConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                if (usernameExists(conn, username)) {
+                    conn.rollback();
+                    return false;
+                }
 
-            // Insert new user
-            String passwordHash = DatabaseSetup.hashPassword(password);
-            PreparedStatement insertPs = conn.prepareStatement(
-                    "INSERT INTO USERS (Username, PasswordHash, Role) VALUES (?, ?, ?)",
-                    PreparedStatement.RETURN_GENERATED_KEYS);
-            insertPs.setString(1, username);
-            insertPs.setString(2, passwordHash);
-            insertPs.setString(3, role.name());
-            int affectedRows = insertPs.executeUpdate();
-            
-            int newUserId = -1;
-            ResultSet generatedKeys = insertPs.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                newUserId = generatedKeys.getInt(1);
+                String passwordHash = DatabaseSetup.hashPassword(password);
+                try (PreparedStatement insertPs = conn.prepareStatement(
+                        "INSERT INTO USERS (Username, PasswordHash, Role) VALUES (?, ?, ?)")) {
+                    insertPs.setString(1, username);
+                    insertPs.setString(2, passwordHash);
+                    insertPs.setString(3, role.name());
+                    if (insertPs.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                insertRoleProfile(conn, username, role);
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
-            generatedKeys.close();
-            insertPs.close();
-            
-            if (affectedRows > 0) {
-                AuditLogger.log(0, "USER_REGISTERED", "Admin registered new user: " + username + " with role: " + role.name());
-                return true;
-            }
-            return false;
+
+            AuditLogger.log(0, "USER_REGISTERED",
+                    "Admin registered new user: " + username + " with role: " + role.name());
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RemoteException("Failed to register user: " + e.getMessage());
@@ -122,19 +117,50 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
 
     @Override
     public boolean updateUserRole(int userID, UserRole newRole) throws RemoteException {
-        try {
-            Connection conn = DerbyConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement("UPDATE USERS SET Role = ? WHERE UserID = ?");
-            ps.setString(1, newRole.name());
-            ps.setInt(2, userID);
-            int affectedRows = ps.executeUpdate();
-            ps.close();
-            
-            if (affectedRows > 0) {
-                AuditLogger.log(0, "ROLE_UPDATED", "Admin updated user ID " + userID + " role to " + newRole.name());
-                return true;
+        try (Connection conn = DerbyConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                UserSnapshot snapshot = getUserSnapshot(conn, userID);
+                if (snapshot == null) {
+                    conn.rollback();
+                    return false;
+                }
+
+                if ("ADMIN".equals(snapshot.role)) {
+                    conn.rollback();
+                    throw new RemoteException("Cannot change the role of admin users");
+                }
+
+                if (snapshot.role.equals(newRole.name())) {
+                    conn.rollback();
+                    return true;
+                }
+
+                validateRoleChange(conn, snapshot, newRole);
+                deleteRoleProfile(conn, snapshot.username, snapshot.role, false);
+
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE USERS SET Role = ? WHERE UserID = ?")) {
+                    ps.setString(1, newRole.name());
+                    ps.setInt(2, userID);
+                    if (ps.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                insertRoleProfile(conn, snapshot.username, newRole);
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
-            return false;
+
+            AuditLogger.log(0, "ROLE_UPDATED",
+                    "Admin updated user ID " + userID + " role to " + newRole.name());
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RemoteException("Failed to update user role: " + e.getMessage());
@@ -143,31 +169,51 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
 
     @Override
     public boolean deleteUser(int userID) throws RemoteException {
-        try {
-            Connection conn = DerbyConnection.getConnection();
-            
-            // Prevent deleting admin users - return false instead of throwing
-            PreparedStatement checkPs = conn.prepareStatement("SELECT Role FROM USERS WHERE UserID = ?");
-            checkPs.setInt(1, userID);
-            ResultSet rs = checkPs.executeQuery();
-            if (rs.next() && "ADMIN".equals(rs.getString("Role"))) {
-                rs.close();
-                checkPs.close();
-                return false;
-            }
-            rs.close();
-            checkPs.close();
+        try (Connection conn = DerbyConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                UserSnapshot snapshot = getUserSnapshot(conn, userID);
+                if (snapshot == null) {
+                    conn.rollback();
+                    return false;
+                }
 
-            PreparedStatement ps = conn.prepareStatement("DELETE FROM USERS WHERE UserID = ?");
-            ps.setInt(1, userID);
-            int affectedRows = ps.executeUpdate();
-            ps.close();
-            
-            if (affectedRows > 0) {
-                AuditLogger.log(0, "USER_DELETED", "Admin deleted user ID: " + userID);
-                return true;
+                if ("ADMIN".equals(snapshot.role)) {
+                    conn.rollback();
+                    return false;
+                }
+
+                ensureUserDeletionAllowed(conn, snapshot);
+                deleteRoleProfile(conn, snapshot.username, snapshot.role, true);
+
+                try (PreparedStatement logPs = conn.prepareStatement("DELETE FROM LOGS WHERE UserID = ?")) {
+                    logPs.setInt(1, userID);
+                    logPs.executeUpdate();
+                }
+
+                try (PreparedStatement reportPs = conn.prepareStatement("DELETE FROM REPORTS WHERE AdminID = ?")) {
+                    reportPs.setInt(1, userID);
+                    reportPs.executeUpdate();
+                }
+
+                try (PreparedStatement userPs = conn.prepareStatement("DELETE FROM USERS WHERE UserID = ?")) {
+                    userPs.setInt(1, userID);
+                    if (userPs.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
-            return false;
+
+            AuditLogger.log(0, "USER_DELETED", "Admin deleted user ID: " + userID);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RemoteException("Failed to delete user: " + e.getMessage());
@@ -204,5 +250,176 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
             throw new RemoteException("Failed to get users: " + e.getMessage());
         }
         return users;
+    }
+
+    private boolean usernameExists(Connection conn, String username) throws SQLException {
+        try (PreparedStatement checkPs = conn.prepareStatement("SELECT 1 FROM USERS WHERE Username = ?")) {
+            checkPs.setString(1, username);
+            try (ResultSet rs = checkPs.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private UserSnapshot getUserSnapshot(Connection conn, int userID) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT UserID, Username, Role FROM USERS WHERE UserID = ?")) {
+            ps.setInt(1, userID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new UserSnapshot(rs.getInt("UserID"), rs.getString("Username"), rs.getString("Role"));
+            }
+        }
+    }
+
+    private void insertRoleProfile(Connection conn, String username, UserRole role) throws SQLException {
+        switch (role) {
+            case PATIENT:
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO PATIENTS (Username, ContactNumber, Address) VALUES (?, ?, ?)")) {
+                    ps.setString(1, username);
+                    ps.setString(2, null);
+                    ps.setString(3, null);
+                    ps.executeUpdate();
+                }
+                break;
+            case DOCTOR:
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO DOCTORS (Username, DoctorName, Specialization, ContactNumber) "
+                        + "VALUES (?, ?, ?, ?)")) {
+                    ps.setString(1, username);
+                    ps.setString(2, AdminProvisioningDefaults.doctorName(username));
+                    ps.setString(3, null);
+                    ps.setString(4, null);
+                    ps.executeUpdate();
+                }
+                break;
+            case RECEPTIONIST:
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO RECEPTIONISTS (Username, FullName, ContactNumber) VALUES (?, ?, ?)")) {
+                    ps.setString(1, username);
+                    ps.setString(2, AdminProvisioningDefaults.receptionistName(username));
+                    ps.setString(3, null);
+                    ps.executeUpdate();
+                }
+                break;
+            case ADMIN:
+                break;
+            default:
+                throw new SQLException("Unsupported role: " + role.name());
+        }
+    }
+
+    private void validateRoleChange(Connection conn, UserSnapshot snapshot, UserRole newRole) throws SQLException {
+        if ("DOCTOR".equals(snapshot.role)) {
+            Integer doctorId = getDoctorIdByUsername(conn, snapshot.username);
+            if (doctorId != null && doctorHasDependencies(conn, doctorId)) {
+                throw new SQLException("Doctor accounts with schedules or appointments cannot be re-assigned.");
+            }
+        }
+
+        if ("ADMIN".equals(newRole.name())) {
+            throw new SQLException("Promoting users to ADMIN is not supported from this panel.");
+        }
+    }
+
+    private void ensureUserDeletionAllowed(Connection conn, UserSnapshot snapshot) throws SQLException {
+        if ("PATIENT".equals(snapshot.role) && userHasPatientHistory(conn, snapshot.username)) {
+            throw new SQLException("Cannot delete a patient user with appointment or consultation history.");
+        }
+
+        if ("DOCTOR".equals(snapshot.role)) {
+            Integer doctorId = getDoctorIdByUsername(conn, snapshot.username);
+            if (doctorId != null && doctorHasDependencies(conn, doctorId)) {
+                throw new SQLException("Cannot delete a doctor user with schedules or appointments.");
+            }
+        }
+    }
+
+    private void deleteRoleProfile(Connection conn, String username, String role, boolean deletingUser)
+            throws SQLException {
+        if ("PATIENT".equals(role)) {
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM PATIENTS WHERE Username = ?")) {
+                ps.setString(1, username);
+                ps.executeUpdate();
+            }
+            return;
+        }
+
+        if ("RECEPTIONIST".equals(role)) {
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM RECEPTIONISTS WHERE Username = ?")) {
+                ps.setString(1, username);
+                ps.executeUpdate();
+            }
+            return;
+        }
+
+        if ("DOCTOR".equals(role)) {
+            Integer doctorId = getDoctorIdByUsername(conn, username);
+            if (doctorId == null) {
+                return;
+            }
+
+            if (doctorHasDependencies(conn, doctorId)) {
+                throw new SQLException(deletingUser
+                        ? "Cannot delete a doctor user with schedules or appointments."
+                        : "Doctor accounts with schedules or appointments cannot be re-assigned.");
+            }
+
+            try (PreparedStatement schedulePs = conn.prepareStatement(
+                    "DELETE FROM DOCTOR_SCHEDULE WHERE DoctorID = ?")) {
+                schedulePs.setInt(1, doctorId);
+                schedulePs.executeUpdate();
+            }
+            try (PreparedStatement doctorPs = conn.prepareStatement("DELETE FROM DOCTORS WHERE Username = ?")) {
+                doctorPs.setString(1, username);
+                doctorPs.executeUpdate();
+            }
+        }
+    }
+
+    private Integer getDoctorIdByUsername(Connection conn, String username) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT DoctorID FROM DOCTORS WHERE Username = ?")) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("DoctorID") : null;
+            }
+        }
+    }
+
+    private boolean doctorHasDependencies(Connection conn, int doctorId) throws SQLException {
+        return count(conn, "SELECT COUNT(*) FROM APPOINTMENTS WHERE DoctorID = ?", doctorId) > 0
+                || count(conn, "SELECT COUNT(*) FROM CONSULTATION_NOTES WHERE DoctorID = ?", doctorId) > 0
+                || count(conn, "SELECT COUNT(*) FROM DOCTOR_SCHEDULE WHERE DoctorID = ?", doctorId) > 0;
+    }
+
+    private boolean userHasPatientHistory(Connection conn, String username) throws SQLException {
+        return count(conn, "SELECT COUNT(*) FROM APPOINTMENTS WHERE Username = ?", username) > 0
+                || count(conn, "SELECT COUNT(*) FROM CONSULTATION_NOTES WHERE PatientUsername = ?", username) > 0;
+    }
+
+    private int count(Connection conn, String sql, Object value) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, value);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    private static final class UserSnapshot {
+        private final int userId;
+        private final String username;
+        private final String role;
+
+        private UserSnapshot(int userId, String username, String role) {
+            this.userId = userId;
+            this.username = username;
+            this.role = role;
+        }
     }
 }

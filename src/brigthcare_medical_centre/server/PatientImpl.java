@@ -24,21 +24,12 @@ public class PatientImpl extends UnicastRemoteObject implements PatientInterface
     @Override
     public boolean bookAppointment(String username, int doctorId, String date, String time)
             throws RemoteException {
-        // Check availability first
-        List<String> available = patientDB.getDoctorAvailability(doctorId, date);
-        System.out.println("DEBUG booking: available slots = " + available);
-        System.out.println("DEBUG booking: requested time = '" + time + "'");
-    
-        if (available.contains(time)) {
-            return patientDB.bookAppointment(username, doctorId, date, time);
-        }
-        System.out.println("DEBUG booking: slot not found in available list!");
-        return false;
+        return patientDB.bookAppointment(username, doctorId, date, time);
     }
 
     @Override
-    public boolean cancelAppointment(int appointmentId) throws RemoteException {
-        return patientDB.cancelAppointment(appointmentId);
+    public boolean cancelAppointment(String username, int appointmentId) throws RemoteException {
+        return patientDB.cancelAppointment(username, appointmentId);
     }
 
     @Override

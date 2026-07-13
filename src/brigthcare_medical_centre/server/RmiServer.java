@@ -10,6 +10,7 @@ import brigthcare_medical_centre.common.ReportInterface;
 import brigthcare_medical_centre.database.DatabaseSetup;
 import brigthcare_medical_centre.report.ReportImpl;
 import brigthcare_medical_centre.util.Constants;
+import brigthcare_medical_centre.util.SslUtil;
 import brigthcare_medical_centre.common.PatientInterface;
 import brigthcare_medical_centre.server.PatientImpl;
 import brigthcare_medical_centre.common.DoctorInterface;
@@ -22,6 +23,9 @@ public class RmiServer {
     public void start() {
         try {
             System.setProperty("java.rmi.server.hostname", Constants.RMI_HOST);
+            if (Constants.SSL_ENABLED) {
+                SslUtil.configureSSL();
+            }
 
             DatabaseSetup.initialize();
 

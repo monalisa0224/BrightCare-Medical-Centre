@@ -29,26 +29,34 @@ public class PatientDB {
     public boolean bookAppointment(String username, int doctorId, String date, String time) {
         String sql = "INSERT INTO APPOINTMENTS (Username, DoctorID, ApptDate, ApptTime, Status) "
                    + "VALUES (?, ?, ?, ?, 'PENDING')";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setInt(2, doctorId);
-            ps.setString(3, date);
-            ps.setString(4, time);
-            boolean booked = ps.executeUpdate() > 0;
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                if (!AppointmentDbSupport.reserveAvailableSlot(conn, doctorId, date, time, null)) {
+                    conn.rollback();
+                    return false;
+                }
 
-            if (booked) {
-                // Mark slot as unavailable
-                PreparedStatement updateSlot = conn.prepareStatement(
-                    "UPDATE DOCTOR_SCHEDULE SET IsAvailable = false "
-                    + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                updateSlot.setInt(1, doctorId);
-                updateSlot.setString(2, date);
-                updateSlot.setString(3, time);
-                updateSlot.executeUpdate();
-                updateSlot.close();
+                ps.setString(1, username);
+                ps.setInt(2, doctorId);
+                ps.setString(3, date);
+                ps.setString(4, time);
+                boolean booked = ps.executeUpdate() > 0;
+
+                if (!booked) {
+                    conn.rollback();
+                    return false;
+                }
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true);
             }
-            return booked;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -56,39 +64,52 @@ public class PatientDB {
     }
 
     // Cancel appointment
-    // Cancel appointment
-    public boolean cancelAppointment(int appointmentId) {
-        // First get the appointment details before cancelling
-        String getAppt = "SELECT DoctorID, ApptDate, ApptTime FROM APPOINTMENTS WHERE AppointmentID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement getPs = conn.prepareStatement(getAppt)) {
-            getPs.setInt(1, appointmentId);
-            ResultSet rs = getPs.executeQuery();
+    public boolean cancelAppointment(String username, int appointmentId) {
+        String getAppt = "SELECT DoctorID, ApptDate, ApptTime, Status "
+                + "FROM APPOINTMENTS WHERE AppointmentID = ? AND Username = ?";
+        String cancelSql = "UPDATE APPOINTMENTS SET Status = 'CANCELLED' "
+                + "WHERE AppointmentID = ? AND Username = ? AND Status IN ('PENDING', 'ACCEPTED')";
 
-            if (rs.next()) {
-                int doctorId = rs.getInt("DoctorID");
-                String date = rs.getString("ApptDate");
-                String time = rs.getString("ApptTime");
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement getPs = conn.prepareStatement(getAppt)) {
+                getPs.setInt(1, appointmentId);
+                getPs.setString(2, username);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                // Cancel the appointment
-                PreparedStatement cancelPs = conn.prepareStatement(
-                    "UPDATE APPOINTMENTS SET Status = 'CANCELLED' WHERE AppointmentID = ?");
-                cancelPs.setInt(1, appointmentId);
-                boolean cancelled = cancelPs.executeUpdate() > 0;
-                cancelPs.close();
+                    String status = rs.getString("Status");
+                    if (!"PENDING".equals(status) && !"ACCEPTED".equals(status)) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                if (cancelled) {
-                    // Restore the slot availability
-                    PreparedStatement restoreSlot = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = true "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    restoreSlot.setInt(1, doctorId);
-                    restoreSlot.setString(2, date);
-                    restoreSlot.setString(3, time);
-                    restoreSlot.executeUpdate();
-                    restoreSlot.close();
+                    int doctorId = rs.getInt("DoctorID");
+                    String date = rs.getString("ApptDate");
+                    String time = rs.getString("ApptTime");
+
+                    try (PreparedStatement cancelPs = conn.prepareStatement(cancelSql)) {
+                        cancelPs.setInt(1, appointmentId);
+                        cancelPs.setString(2, username);
+                        if (cancelPs.executeUpdate() != 1) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+
+                    AppointmentDbSupport.releaseSlotIfUnused(conn, doctorId, date, time, appointmentId);
+                    conn.commit();
+                    return true;
                 }
-                return cancelled;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -151,9 +172,9 @@ public class PatientDB {
     // Check doctor availability
     public List<String> getDoctorAvailability(int doctorId, String date) {
         List<String> slots = new ArrayList<>();
-        System.out.println("DEBUG: Checking DoctorID=" + doctorId + " Date=" + date);
         String sql = "SELECT TimeSlot FROM DOCTOR_SCHEDULE "
-                   + "WHERE DoctorID = ? AND ScheduleDate = ? AND IsAvailable = true";
+                   + "WHERE DoctorID = ? AND ScheduleDate = ? AND IsAvailable = true "
+                   + "ORDER BY TimeSlot";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
@@ -162,7 +183,6 @@ public class PatientDB {
             while (rs.next()) {
                 slots.add(rs.getString("TimeSlot"));
             }
-            System.out.println("DEBUG: Found " + slots.size() + " slots");
         } catch (SQLException e) {
             e.printStackTrace();
         }

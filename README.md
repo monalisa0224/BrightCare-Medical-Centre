@@ -1,237 +1,171 @@
-# Member 4 — Implementation Complete
+# BrightCare Medical Centre (Java RMI)
 
-## Overview
-Member 4 has successfully implemented all components under their scope:
+Distributed clinic management system for BrightCare Medical Centre built with Java RMI, Java Swing, and embedded Apache Derby.
 
-- ✅ **RMI Server Infrastructure** - Registry setup, service binding
-- ✅ **Authentication System** - Centralized login for all roles
-- ✅ **Report Generation** - Three report types with multi-threaded execution
-- ✅ **Admin GUI** - Complete Swing interface with role validation
-- ✅ **Core Database** - USERS, LOGS, REPORTS tables with seed data
-- ✅ **Fault Tolerance** - Error handling and retry logic
-- ✅ **Multi-threading** - Thread pool for concurrent report generation
-- ✅ **Serialization** - RMI object passing
+## System overview
 
-## Key Deliverables Implemented
+The system has 1 RMI server and 4 client roles:
 
-### 1. RMI Server Infrastructure
+1. **Receptionist**: register/search/update/delete patient records.
+2. **Patient**: view profile, check availability, book appointments, cancel appointments, view schedules/history.
+3. **Doctor**: manage pending appointments, reschedule/cancel, manage weekly slots, update consultation notes, view patient history, update profile/settings.
+4. **Admin**: user management, audit log viewing, report generation.
 
-**Files Created:**
-- `src/brigthcare_medical_centre/server/RmiServer.java`
-- `src/brigthcare_medical_centre/server/ServerDriver.java`
+## Project structure
 
-**Features:**
-- RMI registry on port 1099
-- Service binding for Authentication, Admin, Report interfaces
-- Embedded Derby initialization
-- Clean shutdown handling
+- Active source path: `src\brigthcare_medical_centre\...`
+- Active test path: `test\brigthcare_medical_centre\tests\...`
+- Build output: `build\classes`
 
-### 2. Central Authentication System
+> The nested folder `BrigthCare_Medical_Centre\` is a legacy duplicate and is **not** the active build source.
 
-**Files Created:**
-- `src/brigthcare_medical_centre/auth/AuthenticationInterface.java`
-- `src/brigthcare_medical_centre/auth/AuthenticationImpl.java`
-- `src/brigthcare_medical_centre/auth/User.java`
-- `src/brigthcare_medical_centre/auth/UserRole.java`
+## Completed implementation and updates
 
-**Features:**
-- Central authentication for ALL roles (Admin, Doctor, Receptionist, Patient)
-- Password hashing (SHA-256)
-- Role-based access control
-- Audit logging of all auth activities
+### Core features completed
 
-### 3. Advanced Report Generation
+- RMI server startup and service binding for Authentication, Admin, Report, Patient, Doctor, Receptionist.
+- Centralized authentication with role-based access checks.
+- Embedded Derby schema setup and default seed users.
+- Full Swing clients for all roles.
+- Admin reporting module (monthly appointments, doctor consultations, patient visits).
+- Audit logging for system actions.
 
-**Files Created:**
-- `src/brigthcare_medical_centre/report/ReportInterface.java`
-- `src/brigthcare_medical_centre/report/ReportImpl.java`
-- `src/brigthcare_medical_centre/report/ReportGenerator.java`
-- `src/brigthcare_medical_centre/report/ReportType.java`
+### Critical fixes completed
 
-**Three Report Types:**
+- **Appointment integrity hardening**
+  - Booking is now transaction-safe to prevent duplicate slot reservation.
+  - Appointment state transitions are validated (pending/accepted/completed/cancelled/rejected).
+  - Slot availability and appointment status are synchronized.
 
-1. **Monthly Appointment Reports**
-   - Query: `Appointments` joined with `Patients` and `Doctors`
-   - Grouping: By doctor, date range, status
-   - Output: Excel/CSV format for admin reports
+- **Known doctor slot bug fixed**
+  - Doctor weekly add/remove slot actions no longer override occupied slots.
+  - UI now reports partial updates when some dates are blocked by active bookings.
 
-2. **Doctor Consultation Reports**
-   - Query: `Consultations` and `Appointments`
-   - Metrics: Doctor performance, consultation counts
-   - Personalization: Doctor-specific reports by date range
+- **Patient cancellation safety**
+  - Cancellation now requires the logged-in username to prevent cross-user cancellation.
+  - Patients can cancel both **PENDING** and **ACCEPTED** appointments.
 
-3. **Patient Visit Summaries**
-   - Query: `Patients` + `Appointments`
-   - Insights: Doctor history, frequency analysis
-   - Data: First visit, last visit, total visits per patient
+- **Doctor appointment management completed**
+  - Added doctor-side **Manage Appointments** tab with cancel/reschedule workflows.
 
-**Multi-threading:**
-- Fixed thread pool (size 5) for report generation
-- Non-blocking execution for large data queries
-- Report data saved to `REPORTS` database table
+- **Admin provisioning consistency**
+  - Admin-created users are now provisioned in role-specific tables (`DOCTORS`, `PATIENTS`, `RECEPTIONISTS`).
+  - Role changes and user deletion are validated against dependent data to protect integrity.
 
-### 4. Admin GUI Interface
+- **Report schema alignment**
+  - Report queries now match actual Derby schema (`APPOINTMENTS`, `DOCTORS`, `PATIENTS`, `CONSULTATION_NOTES`).
 
-**Files Created:**
-- `src/brigthcare_medical_centre/gui/admin/AdminLoginFrame.java`
-- `src/brigthcare_medical_centre/gui/admin/AdminDashboardFrame.java`
-- `src/brigthcare_medical_centre/gui/admin/ReportPanel.java`
-- `src/brigthcare_medical_centre/gui/admin/ReportResultPanel.java`
-- `src/brigthcare_medical_centre/gui/admin/LogViewerPanel.java`
+- **Database reliability**
+  - Replaced shared singleton DB connection with short-lived per-call connections for safer concurrent RMI operations.
 
-**Features:**
-- Secure role validation (admin-only access)
-- Tabbed interface for Reports, Audit Logs, Doctor/Patient Management
-- Real-time report generation
-- Drill-down with `ReportResultPanel`
-- Complete audit trail viewer
+- **SSL wiring**
+  - SSL-enabled RMI is now supported behind config flags.
+  - Server validates required keystore/truststore properties when SSL is enabled.
 
-### 5. Core Database Infrastructure
+- **Audit logging fix**
+  - System-level actions now log with nullable user IDs instead of invalid FK values.
 
-**Files Created:**
-- `src/brigthcare_medical_centre/database/DatabaseSetup.java`
-- `src/brigthcare_medical_centre/database/DerbyConnection.java`
-- `src/brigthcare_medical_centre/database/AuditLogger.java`
+## Prerequisites
 
-**Tables Created:**
+1. Windows OS (batch scripts are provided for Windows).
+2. JDK 8 installed and available on `PATH` (`java -version`, `javac -version`).
+3. `lib\derby.jar` present in the repository.
 
-| Table | Purpose |
-|-------|---------|
-| `USERS` | Central authentication for all roles |
-| `LOGS` | Audit trail of all admin actions |
-| `REPORTS` | Storage of generated reports |
+## Default seeded accounts
 
-**Initial Data:**
 - Admin: `admin` / `admin123`
 - Doctor: `doctor1` / `doctor123`
 - Patient: `patient1` / `patient123`
+- Receptionist: `receptionist1` / `receptionist123`
 
-### 6. Utility Layer
+## How to run (recommended)
 
-**Files Created:**
-- `src/brigthcare_medical_centre/util/Constants.java`
-- `src/brigthcare_medical_centre/util/DateUtils.java`
-- `src/brigthcare_medical_centre/util/SslUtil.java`
+### 1. Build the project
 
-**Features:**
-- Centralized configuration
-- Date formatting utilities
-- SSL/TLS stubs for secure communication
+Run from repository root:
 
-### 7. Project Setup Files
-
-**Files Added:**
-- `build.bat` - One-click compilation
-- `start_server.bat` - Build + start RMI server
-- `start_admin.bat` - Launch admin client
-- `start_patient.bat` - Launch patient client
-- `.gitignore` - Proper artifact filtering
-- `README.md` - Documentation
-
-## Configuration & Build
-
-### Dependencies
-- Derby 10.14.2.0 (Java 8 compatible)
-- Java RMI (built-in)
-- Java Swing (built-in)
-- No additional frameworks required
-
-### Running the System
-
-```bash
-# Terminal 1: Start RMI server (keep this open)
+```bat
 build.bat
-server
-# start_server.bat
+```
 
-# Terminal 2: Launch Admin GUI
+### 2. Start the server (keep this terminal open)
+
+```bat
+start_server.bat
+```
+
+### 3. Start client apps in separate terminals
+
+Admin:
+
+```bat
 start_admin.bat
+```
 
-# Terminal 3: Launch Patient GUI  
+Doctor:
+
+```bat
+start_doctor.bat
+```
+
+Patient:
+
+```bat
 start_patient.bat
 ```
 
-### Generated Files
+Receptionist:
 
-**Runtime files (excludes from git):**
-- `Build/Classes/` - Compiled Java classes
-- `BrightCareDB/` - Embedded Derby database
-- `derby.log` - Derby activity log
-- `*.txt` files
+```bat
+start_receptionist.bat
+```
 
-## Technical Implementation Details
+## SSL mode (optional)
 
-### Serialization Strategy
-- All RMI interfaces extend `java.rmi.Remote`
-- Entities implement `Serializable`
-- Secure object passing via network
+SSL is disabled by default. To enable:
 
-### Thread Safety
-- `DerbyConnection` - Synchronized singleton
-- `AuditLogger` - Thread-safe database writes  
-- `ReportGenerator` - Fixed thread pool (5 threads)
+1. Set JVM property `-Dbrightcare.ssl.enabled=true`
+2. Provide all SSL properties:
+   - `-Djavax.net.ssl.keyStore=<path>`
+   - `-Djavax.net.ssl.keyStorePassword=<password>`
+   - `-Djavax.net.ssl.trustStore=<path>`
+   - `-Djavax.net.ssl.trustStorePassword=<password>`
 
-### Error Handling
-- Comprehensive `try-catch` blocks throughout
-- Meaningful error messages to clients
-- System resilience maintained on failures
+If SSL is enabled but these properties are missing, server startup will fail fast with a clear error.
 
-### Data Integrity
-- Foreign key constraints
-- Password hashing (SHA-256)
-- Prepared statements for SQL injection protection
+## Testing
 
-## Benefits Delivered
+### Regression smoke tests
 
-1. **Single Source of Truth** - Central authentication and audit logging
-2. **Report Automation** - Generate business insights with one click
-3. **Role-based Security** - Proper access controls
-4. **Performance Optimization** - Multi-threaded report generation
-5. **Zero External Dependencies** - Embedded Derby, built-in Java
-6. **Debug-Friendly** - Clear logging and error messages
-7. **Scalable** - RMI architecture supports distributed deployment
+Run from repository root:
 
-## Test Results
+```bat
+run_tests.bat
+```
 
-All services successfully pass basic integration tests:
+This compiles and runs:
 
-1. **Authentication** - Admin, Doctor, Patient login verified
-2. **RMI Communication** - All remote services accessible
-3. **Database Integration** - Tables created, data seeded, queries executed
-4. **Report Generation** - All three report types produce output
-5. **User Experience** - Admin GUI functional and responsive
+- `test\brigthcare_medical_centre\tests\RegressionSmokeTests.java`
 
-## Files Ready for Integration
+Covered scenarios:
 
-The following files are complete and ready for other team members:
+1. booking integrity
+2. patient cancellation ownership and slot restore
+3. doctor reschedule and slot guardrails
+4. admin role provisioning and cleanup
+5. report generation compatibility with actual schema
 
-### Remote Interfaces (Shared)
-- `common/AuthenticationInterface.java`
-- `common/AdminInterface.java` 
-- `common/ReportInterface.java`
-- `common/PatientInterface.java`
-- `common/DoctorInterface.java`
+## Troubleshooting
 
-### Server Implementations
-- `server/AuthenticationImpl.java`
-- `server/PatientImpl.java`
-- `server/DoctorImpl.java`
+- **Client cannot connect to server**: ensure `start_server.bat` is running first.
+- **Build fails**: verify JDK 8 and `lib\derby.jar`.
+- **Port conflict (1099)**: stop other RMI services or change RMI port via JVM property `-Dbrightcare.rmi.port=<port>`.
+- **Wrong files being edited**: only edit under root `src\...`, not nested legacy project folder.
 
-### Database Access
-- `database/PatientDB.java`
-- `database/DoctorDB.java`
+## Notes for contributors
 
-## Summary
-
-Member 4 has delivered a production-ready RMI-based clinic management system core with:
-
-- ✅ **Robust security** and authentication
-- ✅ **Comprehensive reporting** capabilities
-- ✅ **Secure communication** (SSL/TLS)
-- ✅ **Fail-tolerant design**
-- ✅ **Professional user experience** (Admin GUI)
-- ✅ **Zero external dependencies**
-- ✅ **Simpledu deployment** via batch scripts
-- ✅ **Extensive documentation** (README and comprehensive comments)
-
-The system is production-ready and integrates seamlessly with implementations from Members 1-3 to form a complete hospital clinic management solution.
+- Keep schema-related changes synchronized with:
+  - `src\brigthcare_medical_centre\database\DatabaseSetup.java`
+  - `src\brigthcare_medical_centre\report\ReportGenerator.java`
+  - appointment/schedule logic in `PatientDB` and `DoctorDB`
+- Prefer running `build.bat` and `run_tests.bat` before pushing.

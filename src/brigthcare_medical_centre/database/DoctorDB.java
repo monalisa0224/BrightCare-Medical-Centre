@@ -46,36 +46,12 @@ public class DoctorDB {
     }
 
     public boolean acceptAppointment(int appointmentId) {
-        String getAppt = "SELECT DoctorID, ApptDate, ApptTime FROM APPOINTMENTS WHERE AppointmentID = ?";
+        String sql = "UPDATE APPOINTMENTS SET Status = 'ACCEPTED' "
+                + "WHERE AppointmentID = ? AND Status = 'PENDING'";
         try (Connection conn = getConnection();
-             PreparedStatement getPs = conn.prepareStatement(getAppt)) {
-            getPs.setInt(1, appointmentId);
-            ResultSet rs = getPs.executeQuery();
-            if (rs.next()) {
-                int doctorId = rs.getInt("DoctorID");
-                String date = rs.getString("ApptDate");
-                String time = rs.getString("ApptTime");
-                rs.close();
-
-                PreparedStatement updatePs = conn.prepareStatement(
-                    "UPDATE APPOINTMENTS SET Status = 'ACCEPTED' WHERE AppointmentID = ?");
-                updatePs.setInt(1, appointmentId);
-                boolean ok = updatePs.executeUpdate() > 0;
-                updatePs.close();
-
-                if (ok) {
-                    PreparedStatement slotPs = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = false "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    slotPs.setInt(1, doctorId);
-                    slotPs.setString(2, date);
-                    slotPs.setString(3, time);
-                    slotPs.executeUpdate();
-                    slotPs.close();
-                }
-                return ok;
-            }
-            rs.close();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -83,36 +59,47 @@ public class DoctorDB {
     }
 
     public boolean rejectAppointment(int appointmentId) {
-        String getAppt = "SELECT DoctorID, ApptDate, ApptTime FROM APPOINTMENTS WHERE AppointmentID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement getPs = conn.prepareStatement(getAppt)) {
-            getPs.setInt(1, appointmentId);
-            ResultSet rs = getPs.executeQuery();
-            if (rs.next()) {
-                int doctorId = rs.getInt("DoctorID");
-                String date = rs.getString("ApptDate");
-                String time = rs.getString("ApptTime");
-                rs.close();
+        return updateAppointmentStatusAndReleaseSlot(appointmentId, "PENDING", "REJECTED");
+    }
 
-                PreparedStatement updatePs = conn.prepareStatement(
-                    "UPDATE APPOINTMENTS SET Status = 'REJECTED' WHERE AppointmentID = ?");
-                updatePs.setInt(1, appointmentId);
-                boolean ok = updatePs.executeUpdate() > 0;
-                updatePs.close();
+    private boolean updateAppointmentStatusAndReleaseSlot(int appointmentId, String expectedStatus,
+            String newStatus) {
+        String getAppt = "SELECT DoctorID, ApptDate, ApptTime, Status FROM APPOINTMENTS WHERE AppointmentID = ?";
+        String updateSql = "UPDATE APPOINTMENTS SET Status = ? WHERE AppointmentID = ? AND Status = ?";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement getPs = conn.prepareStatement(getAppt)) {
+                getPs.setInt(1, appointmentId);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (!rs.next() || !expectedStatus.equals(rs.getString("Status"))) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                if (ok) {
-                    PreparedStatement slotPs = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = true "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    slotPs.setInt(1, doctorId);
-                    slotPs.setString(2, date);
-                    slotPs.setString(3, time);
-                    slotPs.executeUpdate();
-                    slotPs.close();
+                    int doctorId = rs.getInt("DoctorID");
+                    String date = rs.getString("ApptDate");
+                    String time = rs.getString("ApptTime");
+
+                    try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                        updatePs.setString(1, newStatus);
+                        updatePs.setInt(2, appointmentId);
+                        updatePs.setString(3, expectedStatus);
+                        if (updatePs.executeUpdate() != 1) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+
+                    AppointmentDbSupport.releaseSlotIfUnused(conn, doctorId, date, time, appointmentId);
+                    conn.commit();
+                    return true;
                 }
-                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
             }
-            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -147,41 +134,52 @@ public class DoctorDB {
     }
 
     public boolean cancelAppointmentByDoctor(int appointmentId) {
-        return cancelAndRestoreSlot(appointmentId, "CANCELLED");
+        return cancelPendingOrAcceptedAppointment(appointmentId, "CANCELLED");
     }
 
-    private boolean cancelAndRestoreSlot(int appointmentId, String newStatus) {
-        String getAppt = "SELECT DoctorID, ApptDate, ApptTime FROM APPOINTMENTS WHERE AppointmentID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement getPs = conn.prepareStatement(getAppt)) {
-            getPs.setInt(1, appointmentId);
-            ResultSet rs = getPs.executeQuery();
-            if (rs.next()) {
-                int doctorId = rs.getInt("DoctorID");
-                String date = rs.getString("ApptDate");
-                String time = rs.getString("ApptTime");
-                rs.close();
+    private boolean cancelPendingOrAcceptedAppointment(int appointmentId, String newStatus) {
+        String getAppt = "SELECT DoctorID, ApptDate, ApptTime, Status FROM APPOINTMENTS WHERE AppointmentID = ?";
+        String updateSql = "UPDATE APPOINTMENTS SET Status = ? "
+                + "WHERE AppointmentID = ? AND Status IN ('PENDING', 'ACCEPTED')";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement getPs = conn.prepareStatement(getAppt)) {
+                getPs.setInt(1, appointmentId);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                PreparedStatement updatePs = conn.prepareStatement(
-                    "UPDATE APPOINTMENTS SET Status = ? WHERE AppointmentID = ?");
-                updatePs.setString(1, newStatus);
-                updatePs.setInt(2, appointmentId);
-                boolean ok = updatePs.executeUpdate() > 0;
-                updatePs.close();
+                    String status = rs.getString("Status");
+                    if (!"PENDING".equals(status) && !"ACCEPTED".equals(status)) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                if (ok) {
-                    PreparedStatement slotPs = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = true "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    slotPs.setInt(1, doctorId);
-                    slotPs.setString(2, date);
-                    slotPs.setString(3, time);
-                    slotPs.executeUpdate();
-                    slotPs.close();
+                    int doctorId = rs.getInt("DoctorID");
+                    String date = rs.getString("ApptDate");
+                    String time = rs.getString("ApptTime");
+
+                    try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                        updatePs.setString(1, newStatus);
+                        updatePs.setInt(2, appointmentId);
+                        if (updatePs.executeUpdate() != 1) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+
+                    AppointmentDbSupport.releaseSlotIfUnused(conn, doctorId, date, time, appointmentId);
+                    conn.commit();
+                    return true;
                 }
-                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
             }
-            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -189,69 +187,59 @@ public class DoctorDB {
     }
 
     public boolean rescheduleAppointment(int appointmentId, String newDate, String newTime) {
-        String getAppt = "SELECT DoctorID, ApptDate, ApptTime FROM APPOINTMENTS WHERE AppointmentID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement getPs = conn.prepareStatement(getAppt)) {
-            getPs.setInt(1, appointmentId);
-            ResultSet rs = getPs.executeQuery();
-            if (rs.next()) {
-                int doctorId = rs.getInt("DoctorID");
-                String oldDate = rs.getString("ApptDate");
-                String oldTime = rs.getString("ApptTime");
-                rs.close();
+        String getAppt = "SELECT DoctorID, ApptDate, ApptTime, Status FROM APPOINTMENTS WHERE AppointmentID = ?";
+        String updateSql = "UPDATE APPOINTMENTS SET ApptDate = ?, ApptTime = ? "
+                + "WHERE AppointmentID = ? AND Status IN ('PENDING', 'ACCEPTED')";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement getPs = conn.prepareStatement(getAppt)) {
+                getPs.setInt(1, appointmentId);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
 
-                if (oldDate.equals(newDate) && oldTime.equals(newTime)) {
+                    String status = rs.getString("Status");
+                    if (!"PENDING".equals(status) && !"ACCEPTED".equals(status)) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    int doctorId = rs.getInt("DoctorID");
+                    String oldDate = rs.getString("ApptDate");
+                    String oldTime = rs.getString("ApptTime");
+
+                    if (oldDate.equals(newDate) && oldTime.equals(newTime)) {
+                        conn.rollback();
+                        return true;
+                    }
+
+                    if (!AppointmentDbSupport.reserveAvailableSlot(conn, doctorId, newDate, newTime, appointmentId)) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                        updatePs.setString(1, newDate);
+                        updatePs.setString(2, newTime);
+                        updatePs.setInt(3, appointmentId);
+                        if (updatePs.executeUpdate() != 1) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+
+                    AppointmentDbSupport.releaseSlotIfUnused(conn, doctorId, oldDate, oldTime, appointmentId);
+                    conn.commit();
                     return true;
                 }
-
-                boolean slotAvailable = false;
-                PreparedStatement checkPs = conn.prepareStatement(
-                    "SELECT IsAvailable FROM DOCTOR_SCHEDULE "
-                    + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                checkPs.setInt(1, doctorId);
-                checkPs.setString(2, newDate);
-                checkPs.setString(3, newTime);
-                ResultSet checkRs = checkPs.executeQuery();
-                if (checkRs.next()) {
-                    slotAvailable = checkRs.getBoolean("IsAvailable");
-                }
-                checkRs.close();
-                checkPs.close();
-
-                if (!slotAvailable) {
-                    return false;
-                }
-
-                PreparedStatement updatePs = conn.prepareStatement(
-                    "UPDATE APPOINTMENTS SET ApptDate = ?, ApptTime = ? WHERE AppointmentID = ?");
-                updatePs.setString(1, newDate);
-                updatePs.setString(2, newTime);
-                updatePs.setInt(3, appointmentId);
-                boolean ok = updatePs.executeUpdate() > 0;
-                updatePs.close();
-
-                if (ok) {
-                    PreparedStatement restorePs = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = true "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    restorePs.setInt(1, doctorId);
-                    restorePs.setString(2, oldDate);
-                    restorePs.setString(3, oldTime);
-                    restorePs.executeUpdate();
-                    restorePs.close();
-
-                    PreparedStatement occupyPs = conn.prepareStatement(
-                        "UPDATE DOCTOR_SCHEDULE SET IsAvailable = false "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?");
-                    occupyPs.setInt(1, doctorId);
-                    occupyPs.setString(2, newDate);
-                    occupyPs.setString(3, newTime);
-                    occupyPs.executeUpdate();
-                    occupyPs.close();
-                }
-                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
             }
-            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -408,42 +396,17 @@ public class DoctorDB {
     }
 
     public boolean updateDoctorSchedule(int doctorId, String date, String slot, boolean isAvailable) {
-        String checkSql = "SELECT COUNT(*) FROM DOCTOR_SCHEDULE "
-                        + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?";
-        String insertSql = "INSERT INTO DOCTOR_SCHEDULE (DoctorID, ScheduleDate, TimeSlot, IsAvailable) "
-                         + "VALUES (?, ?, ?, ?)";
-        String updateSql = "UPDATE DOCTOR_SCHEDULE SET IsAvailable = ? "
-                         + "WHERE DoctorID = ? AND ScheduleDate = ? AND TimeSlot = ?";
         try (Connection conn = getConnection()) {
-            PreparedStatement checkPs = conn.prepareStatement(checkSql);
-            checkPs.setInt(1, doctorId);
-            checkPs.setString(2, date);
-            checkPs.setString(3, slot);
-            ResultSet rs = checkPs.executeQuery();
-            rs.next();
-            boolean exists = rs.getInt(1) > 0;
-            rs.close();
-            checkPs.close();
-
-            boolean ok;
-            if (exists) {
-                PreparedStatement updatePs = conn.prepareStatement(updateSql);
-                updatePs.setBoolean(1, isAvailable);
-                updatePs.setInt(2, doctorId);
-                updatePs.setString(3, date);
-                updatePs.setString(4, slot);
-                ok = updatePs.executeUpdate() > 0;
-                updatePs.close();
-            } else {
-                PreparedStatement insertPs = conn.prepareStatement(insertSql);
-                insertPs.setInt(1, doctorId);
-                insertPs.setString(2, date);
-                insertPs.setString(3, slot);
-                insertPs.setBoolean(4, isAvailable);
-                ok = insertPs.executeUpdate() > 0;
-                insertPs.close();
+            if (AppointmentDbSupport.hasActiveAppointment(conn, doctorId, date, slot, null)) {
+                return false;
             }
-            return ok;
+
+            if (AppointmentDbSupport.slotExists(conn, doctorId, date, slot)) {
+                return AppointmentDbSupport.updateSlotAvailability(conn, doctorId, date, slot, isAvailable);
+            }
+
+            AppointmentDbSupport.insertSlotAvailability(conn, doctorId, date, slot, isAvailable);
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
         }

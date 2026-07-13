@@ -588,12 +588,10 @@ private void doBookAppointment() {
     try {
         List<String[]> allAppointments = patientService.viewAppointmentSchedules(loggedInUsername);
 
-        // Filter ACCEPTED only
+        // Filter PENDING and ACCEPTED so patients can withdraw requests before approval too.
         List<String[]> cancelable = new ArrayList<>();
-        boolean hasPending = false;
         for (String[] a : allAppointments) {
-            if ("ACCEPTED".equalsIgnoreCase(a[4])) cancelable.add(a);
-            else if ("PENDING".equalsIgnoreCase(a[4])) hasPending = true;
+            if ("ACCEPTED".equalsIgnoreCase(a[4]) || "PENDING".equalsIgnoreCase(a[4])) cancelable.add(a);
         }
 
         // ── MAIN DIALOG ──
@@ -610,7 +608,7 @@ private void doBookAppointment() {
         JLabel headerLabel = new JLabel("Cancel Appointment");
         headerLabel.setFont(new Font("Times New Roman", Font.BOLD, 18));
         headerLabel.setForeground(Color.WHITE);
-        JLabel subLabel = new JLabel("Only confirmed (ACCEPTED) appointments can be cancelled");
+        JLabel subLabel = new JLabel("Pending and confirmed appointments can be cancelled");
         subLabel.setFont(new Font("Times New Roman", Font.ITALIC, 11));
         subLabel.setForeground(new Color(255, 200, 200));
         JPanel headerText = new JPanel(new GridLayout(2, 1));
@@ -625,32 +623,16 @@ private void doBookAppointment() {
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // ── EMPTY / PENDING ONLY STATE ──
+        // ── EMPTY STATE ──
         if (cancelable.isEmpty()) {
-            JPanel emptyPanel = new JPanel(new GridLayout(hasPending ? 3 : 2, 1, 0, 10));
+            JPanel emptyPanel = new JPanel(new GridLayout(2, 1, 0, 10));
             emptyPanel.setBackground(Color.WHITE);
             emptyPanel.setBorder(BorderFactory.createEmptyBorder(30, 20, 20, 20));
 
-            JLabel iconLabel = new JLabel("No confirmed appointments to cancel.", SwingConstants.CENTER);
+            JLabel iconLabel = new JLabel("No pending or confirmed appointments to cancel.", SwingConstants.CENTER);
             iconLabel.setFont(new Font("Times New Roman", Font.BOLD, 15));
             iconLabel.setForeground(new Color(44, 62, 80));
             emptyPanel.add(iconLabel);
-
-            if (hasPending) {
-                JPanel pendingNote = new JPanel(new BorderLayout());
-                pendingNote.setBackground(new Color(255, 248, 220));
-                pendingNote.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(255, 165, 0), 1),
-                    BorderFactory.createEmptyBorder(10, 15, 10, 15)
-                ));
-                JLabel pendingLabel = new JLabel(
-                    "<html><b>Note:</b> You have PENDING appointments awaiting doctor approval.<br>"
-                    + "These cannot be cancelled until the doctor accepts them.</html>");
-                pendingLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
-                pendingLabel.setForeground(new Color(120, 80, 0));
-                pendingNote.add(pendingLabel, BorderLayout.CENTER);
-                emptyPanel.add(pendingNote);
-            }
 
             contentPanel.add(emptyPanel, BorderLayout.CENTER);
 
@@ -695,7 +677,9 @@ private void doBookAppointment() {
 
             JLabel dateLabel = makeInfoChip("Date: " + appt[2], new Color(41, 128, 185));
             JLabel timeLabel = makeInfoChip("Time: " + appt[3], new Color(39, 174, 96));
-            JLabel statusLabel = makeInfoChip("ACCEPTED", new Color(39, 174, 96));
+            boolean pendingStatus = "PENDING".equalsIgnoreCase(appt[4]);
+            JLabel statusLabel = makeInfoChip(appt[4],
+                    pendingStatus ? new Color(243, 156, 18) : new Color(39, 174, 96));
 
             detailsRow.add(dateLabel);
             detailsRow.add(Box.createHorizontalStrut(8));
@@ -741,7 +725,7 @@ private void doBookAppointment() {
 
                 try {
                     int apptId = Integer.parseInt(appt[0]);
-                    boolean ok = patientService.cancelAppointment(apptId);
+                    boolean ok = patientService.cancelAppointment(loggedInUsername, apptId);
                     if (ok) {
                         JOptionPane.showMessageDialog(dialog,
                             "Appointment cancelled successfully!",

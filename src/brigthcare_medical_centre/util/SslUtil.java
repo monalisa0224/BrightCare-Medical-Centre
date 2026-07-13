@@ -1,8 +1,5 @@
 package brigthcare_medical_centre.util;
 
-import java.rmi.RemoteException;
-import java.rmi.server.RMIServerSocketFactory;
-import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMISocketFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,7 +9,21 @@ import javax.net.ssl.SSLSocketFactory;
 
 public class SslUtil {
 
+    private static boolean configured;
+
     public static void configureSSL() {
+        if (configured) {
+            return;
+        }
+
+        if (isBlank(System.getProperty("javax.net.ssl.keyStore"))
+                || isBlank(System.getProperty("javax.net.ssl.keyStorePassword"))
+                || isBlank(System.getProperty("javax.net.ssl.trustStore"))
+                || isBlank(System.getProperty("javax.net.ssl.trustStorePassword"))) {
+            throw new IllegalStateException(
+                    "SSL is enabled but the required keyStore/trustStore properties are missing.");
+        }
+
         try {
             RMISocketFactory.setSocketFactory(new RMISocketFactory() {
                 @Override
@@ -25,8 +36,13 @@ public class SslUtil {
                     return SSLServerSocketFactory.getDefault().createServerSocket(port);
                 }
             });
+            configured = true;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Failed to configure SSL for RMI", e);
         }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

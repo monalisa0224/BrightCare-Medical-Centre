@@ -13,7 +13,7 @@ public interface PatientInterface extends Remote {
     boolean bookAppointment(String username, int doctorId, String date, String time) throws RemoteException;
     
     // Cancel appointment
-    boolean cancelAppointment(int appointmentId) throws RemoteException;
+    boolean cancelAppointment(String username, int appointmentId) throws RemoteException;
     
     // View upcoming appointment schedules
     List<String[]> viewAppointmentSchedules(String username) throws RemoteException;

@@ -57,6 +57,7 @@ public class DoctorDashboardFrame extends JFrame {
         tabbedPane.setFont(new Font("Arial", Font.BOLD, 13));
         tabbedPane.addTab("Overview", createOverviewPanel());
         tabbedPane.addTab("Pending Appointments", createPendingAppointmentsPanel());
+        tabbedPane.addTab("Manage Appointments", createAppointmentManagementPanel());
         tabbedPane.addTab("Consultation Notes", createConsultationNotesPanel());
         tabbedPane.addTab("My Schedule", createSchedulePanel());
         tabbedPane.addTab("Patient History", createPatientHistoryPanel());
@@ -237,7 +238,10 @@ public class DoctorDashboardFrame extends JFrame {
             boolean ok = doctorService.acceptAppointment(apptId);
             JOptionPane.showMessageDialog(this,
                     ok ? "Appointment accepted successfully!" : "Failed to accept.");
-            if (ok) refreshPendingTable(table);
+            if (ok) {
+                refreshPendingTable(table);
+                refreshCurrentTab();
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
@@ -258,7 +262,10 @@ public class DoctorDashboardFrame extends JFrame {
             boolean ok = doctorService.rejectAppointment(apptId);
             JOptionPane.showMessageDialog(this,
                     ok ? "Appointment rejected." : "Failed to reject.");
-            if (ok) refreshPendingTable(table);
+            if (ok) {
+                refreshPendingTable(table);
+                refreshCurrentTab();
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
@@ -277,6 +284,120 @@ public class DoctorDashboardFrame extends JFrame {
             table.getColumnModel().getColumn(0).setPreferredWidth(50);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private JPanel createAppointmentManagementPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        JTable table = new JTable();
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createTitledBorder("Accepted and Pending Appointments"));
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JButton refreshBtn = new JButton("Refresh");
+        JButton cancelBtn = new JButton("Cancel Appointment");
+        JButton rescheduleBtn = new JButton("Reschedule");
+
+        refreshBtn.addActionListener(e -> refreshManagedAppointments(table));
+        cancelBtn.addActionListener(e -> handleDoctorCancel(table));
+        rescheduleBtn.addActionListener(e -> handleDoctorReschedule(table));
+
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(rescheduleBtn);
+
+        panel.add(buttonPanel, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        refreshManagedAppointments(table);
+        return panel;
+    }
+
+    private void refreshManagedAppointments(JTable table) {
+        try {
+            List<String[]> appointments = doctorService.getDoctorAppointments(doctorId);
+            String[] columns = {"Appt ID", "Patient", "Date", "Time", "Status"};
+            DefaultTableModel model = new DefaultTableModel(columns, 0);
+            for (String[] row : appointments) {
+                if ("PENDING".equals(row[4]) || "ACCEPTED".equals(row[4])) {
+                    model.addRow(row);
+                }
+            }
+            table.setModel(model);
+            applyColorCoding(table, 4);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void handleDoctorCancel(JTable table) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Please select an appointment.");
+            return;
+        }
+
+        int apptId = Integer.parseInt(table.getValueAt(row, 0).toString());
+        String status = table.getValueAt(row, 4).toString();
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Cancel the selected " + status.toLowerCase() + " appointment?",
+                "Confirm Cancellation", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            boolean ok = doctorService.cancelAppointmentByDoctor(apptId);
+            JOptionPane.showMessageDialog(this,
+                    ok ? "Appointment cancelled." : "Unable to cancel the selected appointment.");
+            if (ok) {
+                refreshManagedAppointments(table);
+                refreshCurrentTab();
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void handleDoctorReschedule(JTable table) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Please select an appointment.");
+            return;
+        }
+
+        int apptId = Integer.parseInt(table.getValueAt(row, 0).toString());
+        String currentDate = table.getValueAt(row, 2).toString();
+        String currentTime = table.getValueAt(row, 3).toString();
+
+        JTextField dateField = new JTextField(currentDate);
+        JComboBox<String> timeCombo = new JComboBox<>(DEFAULT_SLOTS);
+        timeCombo.setSelectedItem(currentTime);
+        JPanel form = new JPanel(new GridLayout(2, 2, 8, 8));
+        form.add(new JLabel("New Date (yyyy-MM-dd):"));
+        form.add(dateField);
+        form.add(new JLabel("New Time:"));
+        form.add(timeCombo);
+
+        int confirm = JOptionPane.showConfirmDialog(this, form, "Reschedule Appointment",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (confirm != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        try {
+            boolean ok = doctorService.rescheduleAppointment(
+                    apptId, dateField.getText().trim(), timeCombo.getSelectedItem().toString());
+            JOptionPane.showMessageDialog(this,
+                    ok ? "Appointment rescheduled." : "Unable to reschedule. The new slot may be unavailable.");
+            if (ok) {
+                refreshManagedAppointments(table);
+                refreshCurrentTab();
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
@@ -473,7 +594,7 @@ public class DoctorDashboardFrame extends JFrame {
                             if (s[0].equals(dateStr) && s[1].equals(slot)) {
                                 found = true;
                                 boolean avail = Boolean.parseBoolean(s[2]);
-                                JLabel cell = new JLabel(avail ? "Available" : "Booked", SwingConstants.CENTER);
+                                JLabel cell = new JLabel(avail ? "Available" : "Unavailable", SwingConstants.CENTER);
                                 cell.setOpaque(true);
                                 cell.setBackground(avail ? new Color(200, 255, 200) : new Color(255, 200, 200));
                                 cell.setBorder(BorderFactory.createLineBorder(Color.GRAY));
@@ -520,15 +641,31 @@ public class DoctorDashboardFrame extends JFrame {
         addSlotBtn.addActionListener(e -> {
             String slot = (String) slotCombo.getSelectedItem();
             try {
-                String startDate = new SimpleDateFormat("yyyy-MM-dd").format(currentWeekStart[0]);
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(currentWeekStart[0]);
+                int updated = 0;
+                StringBuilder blockedDates = new StringBuilder();
                 for (int d = 0; d < 5; d++) {
                     String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime());
-                    doctorService.updateDoctorSchedule(doctorId, dateStr, slot, true);
+                    if (doctorService.updateDoctorSchedule(doctorId, dateStr, slot, true)) {
+                        updated++;
+                    } else {
+                        if (blockedDates.length() > 0) {
+                            blockedDates.append(", ");
+                        }
+                        blockedDates.append(dateStr);
+                    }
                     cal.add(Calendar.DAY_OF_MONTH, 1);
                 }
-                JOptionPane.showMessageDialog(this, "Slot added for the week.");
+                if (blockedDates.length() == 0) {
+                    JOptionPane.showMessageDialog(this, "Slot added for the week.");
+                } else if (updated > 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Slot updated for part of the week.\nBlocked dates: " + blockedDates);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "No slots were updated.\nBlocked dates: " + blockedDates);
+                }
                 refreshSchedule.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
@@ -538,15 +675,31 @@ public class DoctorDashboardFrame extends JFrame {
         removeSlotBtn.addActionListener(e -> {
             String slot = (String) slotCombo.getSelectedItem();
             try {
-                String startDate = new SimpleDateFormat("yyyy-MM-dd").format(currentWeekStart[0]);
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(currentWeekStart[0]);
+                int updated = 0;
+                StringBuilder blockedDates = new StringBuilder();
                 for (int d = 0; d < 5; d++) {
                     String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime());
-                    doctorService.updateDoctorSchedule(doctorId, dateStr, slot, false);
+                    if (doctorService.updateDoctorSchedule(doctorId, dateStr, slot, false)) {
+                        updated++;
+                    } else {
+                        if (blockedDates.length() > 0) {
+                            blockedDates.append(", ");
+                        }
+                        blockedDates.append(dateStr);
+                    }
                     cal.add(Calendar.DAY_OF_MONTH, 1);
                 }
-                JOptionPane.showMessageDialog(this, "Slot removed for the week.");
+                if (blockedDates.length() == 0) {
+                    JOptionPane.showMessageDialog(this, "Slot removed for the week.");
+                } else if (updated > 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Slots updated for part of the week.\nBooked or locked dates: " + blockedDates);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "No slots were updated.\nBooked or locked dates: " + blockedDates);
+                }
                 refreshSchedule.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
@@ -752,6 +905,18 @@ public class DoctorDashboardFrame extends JFrame {
                 return c;
             }
         });
+    }
+
+    private void refreshCurrentTab() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        tabbedPane.setComponentAt(0, createOverviewPanel());
+        tabbedPane.setComponentAt(1, createPendingAppointmentsPanel());
+        tabbedPane.setComponentAt(2, createAppointmentManagementPanel());
+        tabbedPane.setComponentAt(3, createConsultationNotesPanel());
+        tabbedPane.setComponentAt(4, createSchedulePanel());
+        tabbedPane.setComponentAt(5, createPatientHistoryPanel());
+        tabbedPane.setComponentAt(6, createSettingsPanel());
+        tabbedPane.setSelectedIndex(selectedIndex);
     }
 
     private Date getWeekStart(Date date) {
