@@ -70,6 +70,7 @@ The system has 1 RMI server and 4 client roles:
 1. Windows OS (batch scripts are provided for Windows).
 2. JDK 8 installed and available on `PATH` (`java -version`, `javac -version`).
 3. `lib\derby.jar` present in the repository.
+4. Optional for full JUnit suite: `lib\junit-4.13.2.jar` and `lib\hamcrest-core-1.3.jar`.
 
 ## Default seeded accounts
 
@@ -143,7 +144,12 @@ Run from repository root:
 run_tests.bat
 ```
 
-This compiles and runs:
+`run_tests.bat` behavior:
+
+- If JUnit jars exist in `lib\`, it runs the full JUnit suite plus smoke tests.
+- If JUnit jars are missing, it automatically runs smoke tests only.
+
+Smoke test class:
 
 - `test\brigthcare_medical_centre\tests\RegressionSmokeTests.java`
 
