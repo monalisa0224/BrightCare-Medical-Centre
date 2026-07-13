@@ -146,14 +146,14 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
         try {
             Connection conn = DerbyConnection.getConnection();
             
-            // Prevent deleting admin users (optional safety check)
+            // Prevent deleting admin users - return false instead of throwing
             PreparedStatement checkPs = conn.prepareStatement("SELECT Role FROM USERS WHERE UserID = ?");
             checkPs.setInt(1, userID);
             ResultSet rs = checkPs.executeQuery();
             if (rs.next() && "ADMIN".equals(rs.getString("Role"))) {
                 rs.close();
                 checkPs.close();
-                throw new RemoteException("Cannot delete admin users");
+                return false;
             }
             rs.close();
             checkPs.close();
