@@ -112,9 +112,4 @@ public class DoctorImpl extends UnicastRemoteObject implements DoctorInterface {
     public int getDoctorIdByUsername(String username) throws RemoteException {
         return doctorDB.getDoctorIdByUsername(username);
     }
-
-    @Override
-    public List<String[]> getDistinctPatientsForDoctor(int doctorId) throws RemoteException {
-        return doctorDB.getDistinctPatientsForDoctor(doctorId);
-    }
 }

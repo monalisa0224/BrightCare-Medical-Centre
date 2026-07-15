@@ -45,6 +45,4 @@ public interface DoctorInterface extends Remote {
     List<String[]> getTodayAppointments(int doctorId) throws RemoteException;
 
     int getDoctorIdByUsername(String username) throws RemoteException;
-
-    List<String[]> getDistinctPatientsForDoctor(int doctorId) throws RemoteException;
 }
