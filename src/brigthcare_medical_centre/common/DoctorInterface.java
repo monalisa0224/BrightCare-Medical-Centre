@@ -26,6 +26,8 @@ public interface DoctorInterface extends Remote {
 
     List<String[]> getPatientHistory(String patientUsername) throws RemoteException;
 
+    List<String[]> getDistinctPatientsForDoctor(int doctorId) throws RemoteException;
+
     List<String[]> getDoctorTimetable(int doctorId, String weekStartDate) throws RemoteException;
 
     boolean updateDoctorSchedule(int doctorId, String date, String slot, boolean isAvailable) throws RemoteException;
