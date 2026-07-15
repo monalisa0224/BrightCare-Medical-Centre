@@ -603,4 +603,28 @@ public class DoctorDB {
         }
         return -1;
     }
+
+    public List<String[]> getDistinctPatientsForDoctor(int doctorId) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT a.Username, p.ContactNumber "
+                   + "FROM APPOINTMENTS a "
+                   + "LEFT JOIN PATIENTS p ON a.Username = p.Username "
+                   + "WHERE a.DoctorID = ? "
+                   + "ORDER BY a.Username";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, doctorId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new String[]{
+                    rs.getString("Username"),
+                    rs.getString("ContactNumber")
+                });
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
