@@ -54,7 +54,7 @@ public class DoctorDashboardFrame extends JFrame {
         add(createTopBar(), BorderLayout.NORTH);
 
         tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Arial", Font.BOLD, 13));
+        tabbedPane.setFont(new Font("Arial", Font.BOLD, 14));
         tabbedPane.addTab("Overview", createOverviewPanel());
         tabbedPane.addTab("Pending Appointments", createPendingAppointmentsPanel());
         tabbedPane.addTab("Manage Appointments", createAppointmentManagementPanel());
@@ -66,8 +66,8 @@ public class DoctorDashboardFrame extends JFrame {
         add(tabbedPane, BorderLayout.CENTER);
 
         JLabel footer = new JLabel("BrightCare Medical Centre  |  Distributed Systems", SwingConstants.CENTER);
-        footer.setFont(new Font("Arial", Font.ITALIC, 11));
-        footer.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        footer.setFont(new Font("Arial", Font.ITALIC, 12));
+        footer.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
         add(footer, BorderLayout.SOUTH);
 
         setLocationRelativeTo(null);
@@ -77,10 +77,10 @@ public class DoctorDashboardFrame extends JFrame {
     private JPanel createTopBar() {
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(TEAL);
-        topBar.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        topBar.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
 
         JLabel nameLabel = new JLabel("Dr. " + doctorName);
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nameLabel.setForeground(Color.WHITE);
         topBar.add(nameLabel, BorderLayout.WEST);
 
@@ -88,11 +88,11 @@ public class DoctorDashboardFrame extends JFrame {
         rightPanel.setBackground(TEAL);
 
         JButton profileBtn = new JButton("Profile");
-        profileBtn.setFont(new Font("Arial", Font.PLAIN, 12));
+        profileBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         profileBtn.addActionListener(e -> showProfileDialog());
 
         JButton logoutBtn = new JButton("Logout");
-        logoutBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        logoutBtn.setFont(new Font("Arial", Font.BOLD, 13));
         logoutBtn.setBackground(new Color(192, 57, 43));
         logoutBtn.setForeground(Color.WHITE);
         logoutBtn.setFocusPainted(false);
@@ -177,14 +177,14 @@ public class DoctorDashboardFrame extends JFrame {
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(color, 2),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
         JLabel valLabel = new JLabel(String.valueOf(value), SwingConstants.CENTER);
         valLabel.setFont(new Font("Arial", Font.BOLD, 32));
         valLabel.setForeground(color);
 
         JLabel nameLabel = new JLabel(label, SwingConstants.CENTER);
-        nameLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        nameLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         nameLabel.setForeground(Color.DARK_GRAY);
 
         card.add(valLabel, BorderLayout.CENTER);
@@ -196,18 +196,21 @@ public class DoctorDashboardFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         JButton acceptBtn = new JButton("Accept");
+        acceptBtn.setFont(new Font("Arial", Font.BOLD, 13));
         acceptBtn.setBackground(new Color(46, 204, 113));
         acceptBtn.setForeground(Color.WHITE);
         acceptBtn.setFocusPainted(false);
 
         JButton rejectBtn = new JButton("Reject");
+        rejectBtn.setFont(new Font("Arial", Font.BOLD, 13));
         rejectBtn.setBackground(new Color(231, 76, 60));
         rejectBtn.setForeground(Color.WHITE);
         rejectBtn.setFocusPainted(false);
 
         JButton refreshBtn = new JButton("Refresh");
+        refreshBtn.setFont(new Font("Arial", Font.PLAIN, 13));
 
         btnPanel.add(acceptBtn);
         btnPanel.add(rejectBtn);
@@ -295,10 +298,16 @@ public class DoctorDashboardFrame extends JFrame {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(BorderFactory.createTitledBorder("Accepted and Pending Appointments"));
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         JButton refreshBtn = new JButton("Refresh");
+        refreshBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         JButton cancelBtn = new JButton("Cancel Appointment");
+        cancelBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        cancelBtn.setBackground(new Color(231, 76, 60));
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setFocusPainted(false);
         JButton rescheduleBtn = new JButton("Reschedule");
+        rescheduleBtn.setFont(new Font("Arial", Font.BOLD, 13));
 
         refreshBtn.addActionListener(e -> refreshManagedAppointments(table));
         cancelBtn.addActionListener(e -> handleDoctorCancel(table));
@@ -407,14 +416,17 @@ public class DoctorDashboardFrame extends JFrame {
 
         JPanel topPanel = new JPanel(new BorderLayout());
 
-        JPanel selectPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel selectPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         JButton loadBtn = new JButton("Load Appointments");
+        loadBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         JButton viewNotesBtn = new JButton("View Existing Notes");
+        viewNotesBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         selectPanel.add(loadBtn);
         selectPanel.add(viewNotesBtn);
 
         JComboBox<String> apptCombo = new JComboBox<>();
-        apptCombo.setPreferredSize(new Dimension(400, 25));
+        apptCombo.setPreferredSize(new Dimension(450, 28));
+        apptCombo.setFont(new Font("Arial", Font.PLAIN, 13));
         selectPanel.add(new JLabel("Select Appointment:"));
         selectPanel.add(apptCombo);
 
@@ -424,35 +436,49 @@ public class DoctorDashboardFrame extends JFrame {
         formPanel.setBorder(BorderFactory.createTitledBorder("Consultation Notes"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(8, 5, 8, 5);
         gbc.weightx = 1.0;
 
-        JTextArea diagnosisArea = new JTextArea(3, 40);
-        JTextArea treatmentArea = new JTextArea(3, 40);
-        JTextArea prescriptionArea = new JTextArea(3, 40);
-        JTextArea notesArea = new JTextArea(3, 40);
+        JTextArea diagnosisArea = new JTextArea(4, 40);
+        JTextArea treatmentArea = new JTextArea(4, 40);
+        JTextArea prescriptionArea = new JTextArea(4, 40);
+        JTextArea notesArea = new JTextArea(4, 40);
+        Font textFont = new Font("Arial", Font.PLAIN, 13);
+        diagnosisArea.setFont(textFont);
+        treatmentArea.setFont(textFont);
+        prescriptionArea.setFont(textFont);
+        notesArea.setFont(textFont);
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weighty = 0;
-        formPanel.add(new JLabel("Diagnosis:"), gbc);
+        JLabel diagLbl = new JLabel("Diagnosis:");
+        diagLbl.setFont(textFont);
+        formPanel.add(diagLbl, gbc);
         gbc.gridx = 1;
         formPanel.add(new JScrollPane(diagnosisArea), gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
-        formPanel.add(new JLabel("Treatment:"), gbc);
+        JLabel treatLbl = new JLabel("Treatment:");
+        treatLbl.setFont(textFont);
+        formPanel.add(treatLbl, gbc);
         gbc.gridx = 1;
         formPanel.add(new JScrollPane(treatmentArea), gbc);
 
         gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(new JLabel("Prescription:"), gbc);
+        JLabel prescLbl = new JLabel("Prescription:");
+        prescLbl.setFont(textFont);
+        formPanel.add(prescLbl, gbc);
         gbc.gridx = 1;
         formPanel.add(new JScrollPane(prescriptionArea), gbc);
 
         gbc.gridx = 0; gbc.gridy = 3;
-        formPanel.add(new JLabel("Additional Notes:"), gbc);
+        JLabel notesLbl = new JLabel("Additional Notes:");
+        notesLbl.setFont(textFont);
+        formPanel.add(notesLbl, gbc);
         gbc.gridx = 1;
         formPanel.add(new JScrollPane(notesArea), gbc);
 
         JButton saveBtn = new JButton("Save Consultation Notes");
+        saveBtn.setFont(new Font("Arial", Font.BOLD, 13));
         saveBtn.setBackground(TEAL);
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFocusPainted(false);
@@ -481,8 +507,9 @@ public class DoctorDashboardFrame extends JFrame {
 
         viewNotesBtn.addActionListener(e -> {
             if (apptCombo.getItemCount() == 0 || apptCombo.getSelectedItem() == null) return;
-            String sel = apptCombo.getSelectedItem().toString();
-            int apptId = Integer.parseInt(sel.split(" \\|")[0]);
+            String sel = apptCombo.getSelectedItem().toString().trim();
+            if (sel.equals("No accepted/completed appointments")) return;
+            int apptId = Integer.parseInt(sel.split(" \\| ")[0].trim());
             try {
                 String[] note = doctorService.getConsultationNotes(apptId);
                 if (note != null) {
@@ -504,9 +531,10 @@ public class DoctorDashboardFrame extends JFrame {
 
         saveBtn.addActionListener(e -> {
             if (apptCombo.getItemCount() == 0 || apptCombo.getSelectedItem() == null) return;
-            String sel = apptCombo.getSelectedItem().toString();
-            int apptId = Integer.parseInt(sel.split(" \\|")[0]);
-            String patientUser = sel.split(" \\|")[1];
+            String sel = apptCombo.getSelectedItem().toString().trim();
+            if (sel.equals("No accepted/completed appointments")) return;
+            int apptId = Integer.parseInt(sel.split(" \\| ")[0].trim());
+            String patientUser = sel.split(" \\| ")[1].trim();
             try {
                 boolean ok = doctorService.updateConsultationNotes(
                         apptId, doctorId, patientUser,
@@ -526,91 +554,121 @@ public class DoctorDashboardFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 8));
         JButton prevWeekBtn = new JButton("< Previous Week");
+        prevWeekBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         JButton nextWeekBtn = new JButton("Next Week >");
-        JButton refreshScheduleBtn = new JButton("Refresh");
-        JLabel weekLabel = new JLabel("Current Week", SwingConstants.CENTER);
+        nextWeekBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+        JButton refreshBtn = new JButton("Refresh");
+        refreshBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+        JLabel weekLabel = new JLabel("", SwingConstants.CENTER);
         weekLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        JComboBox<String> slotCombo = new JComboBox<>(DEFAULT_SLOTS);
-        JButton addSlotBtn = new JButton("Add Slot");
-        JButton removeSlotBtn = new JButton("Remove Slot");
-
-        JPanel scheduleGrid = new JPanel(new GridLayout(6, 6, 3, 3));
-        scheduleGrid.setBorder(BorderFactory.createTitledBorder("Weekly Timetable"));
-
         controlPanel.add(prevWeekBtn);
-        controlPanel.add(refreshScheduleBtn);
+        controlPanel.add(weekLabel);
         controlPanel.add(nextWeekBtn);
-        controlPanel.add(new JSeparator(SwingConstants.VERTICAL));
-        controlPanel.add(new JLabel("Slot:"));
-        controlPanel.add(slotCombo);
-        controlPanel.add(addSlotBtn);
-        controlPanel.add(removeSlotBtn);
+        controlPanel.add(refreshBtn);
 
-        panel.add(controlPanel, BorderLayout.NORTH);
-        panel.add(weekLabel, BorderLayout.CENTER);
-        panel.add(scheduleGrid, BorderLayout.SOUTH);
+        JPanel scheduleGrid = new JPanel();
+        scheduleGrid.setBorder(BorderFactory.createTitledBorder("Weekly Timetable (Click cells to toggle)"));
+        panel.add(scheduleGrid, BorderLayout.CENTER);
 
         final Date[] currentWeekStart = {getWeekStart(new Date())};
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final SimpleDateFormat displaySdf = new SimpleDateFormat("EEE dd/MM");
+        final String[] dayNames = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
+        final Date today = new Date();
 
-        Runnable refreshSchedule = () -> {
+        final Runnable[] refreshHolder = new Runnable[1];
+        refreshHolder[0] = () -> {
             try {
-                String startDate = new SimpleDateFormat("yyyy-MM-dd").format(currentWeekStart[0]);
+                String startDate = sdf.format(currentWeekStart[0]);
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(currentWeekStart[0]);
                 cal.add(Calendar.DAY_OF_MONTH, 4);
-                String endDate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime());
 
                 List<String[]> slots = doctorService.getDoctorTimetable(doctorId, startDate);
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                SimpleDateFormat displaySdf = new SimpleDateFormat("EEE dd/MM");
                 Calendar c = Calendar.getInstance();
                 c.setTime(currentWeekStart[0]);
-
                 weekLabel.setText("Week: " + displaySdf.format(c.getTime()) + " - "
                         + displaySdf.format(cal.getTime()));
 
                 scheduleGrid.removeAll();
                 scheduleGrid.setLayout(new GridLayout(6, 6, 3, 3));
 
-                scheduleGrid.add(new JLabel("", SwingConstants.CENTER));
-                String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
-                for (String day : days) {
-                    JLabel dayLabel = new JLabel(day, SwingConstants.CENTER);
-                    dayLabel.setFont(new Font("Arial", Font.BOLD, 11));
-                    scheduleGrid.add(dayLabel);
+                scheduleGrid.add(new JLabel("Day / Time", SwingConstants.CENTER));
+                for (String slot : DEFAULT_SLOTS) {
+                    JLabel hl = new JLabel(slot, SwingConstants.CENTER);
+                    hl.setFont(new Font("Arial", Font.BOLD, 11));
+                    scheduleGrid.add(hl);
                 }
 
-                for (String slot : DEFAULT_SLOTS) {
-                    scheduleGrid.add(new JLabel(slot, SwingConstants.CENTER));
-                    Calendar tempCal = Calendar.getInstance();
-                    tempCal.setTime(currentWeekStart[0]);
-                    for (int d = 0; d < 5; d++) {
-                        String dateStr = sdf.format(tempCal.getTime());
+                Calendar dayCal = Calendar.getInstance();
+                dayCal.setTime(currentWeekStart[0]);
+
+                for (int d = 0; d < 5; d++) {
+                    String dateStr = sdf.format(dayCal.getTime());
+                    Calendar todayCal = Calendar.getInstance();
+                    todayCal.setTime(today);
+                    Calendar dateCal = Calendar.getInstance();
+                    dateCal.setTime(dayCal.getTime());
+                    boolean isPast = dateCal.before(todayCal) && !sdf.format(dateCal.getTime()).equals(sdf.format(todayCal.getTime()));
+
+                    JLabel dayLabel = new JLabel(dayNames[d] + " " + displaySdf.format(dayCal.getTime()), SwingConstants.CENTER);
+                    dayLabel.setFont(new Font("Arial", Font.BOLD, 11));
+                    scheduleGrid.add(dayLabel);
+
+                    for (int si = 0; si < DEFAULT_SLOTS.length; si++) {
+                        final String fSlot = DEFAULT_SLOTS[si];
+                        final String fDateStr = dateStr;
+
                         boolean found = false;
+                        boolean isAvailable = true;
                         for (String[] s : slots) {
-                            if (s[0].equals(dateStr) && s[1].equals(slot)) {
+                            if (s[0].equals(fDateStr) && s[1].equals(fSlot)) {
                                 found = true;
-                                boolean avail = Boolean.parseBoolean(s[2]);
-                                JLabel cell = new JLabel(avail ? "Available" : "Unavailable", SwingConstants.CENTER);
-                                cell.setOpaque(true);
-                                cell.setBackground(avail ? new Color(200, 255, 200) : new Color(255, 200, 200));
-                                cell.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-                                scheduleGrid.add(cell);
+                                isAvailable = Boolean.parseBoolean(s[2]);
                                 break;
                             }
                         }
-                        if (!found) {
-                            JLabel cell = new JLabel("--", SwingConstants.CENTER);
-                            cell.setOpaque(true);
-                            cell.setBackground(new Color(240, 240, 240));
-                            cell.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-                            scheduleGrid.add(cell);
+
+                        JButton cellBtn = new JButton();
+                        cellBtn.setFont(new Font("Arial", Font.PLAIN, 11));
+                        cellBtn.setFocusPainted(false);
+
+                        if (isPast) {
+                            cellBtn.setText("--");
+                            cellBtn.setEnabled(false);
+                            cellBtn.setBackground(new Color(220, 220, 220));
+                        } else if (found && !isAvailable) {
+                            cellBtn.setText("Unavailable");
+                            cellBtn.setBackground(new Color(255, 200, 200));
+                            cellBtn.addActionListener(ev -> {
+                                try {
+                                    boolean ok = doctorService.updateDoctorSchedule(doctorId, fDateStr, fSlot, true);
+                                    if (ok) refreshHolder[0].run();
+                                    else JOptionPane.showMessageDialog(panel, "Cannot enable this slot.");
+                                } catch (Exception ex) {
+                                    JOptionPane.showMessageDialog(panel, "Error: " + ex.getMessage());
+                                }
+                            });
+                        } else {
+                            cellBtn.setText("Available");
+                            cellBtn.setBackground(new Color(200, 255, 200));
+                            cellBtn.addActionListener(ev -> {
+                                try {
+                                    boolean ok = doctorService.updateDoctorSchedule(doctorId, fDateStr, fSlot, false);
+                                    if (ok) refreshHolder[0].run();
+                                    else JOptionPane.showMessageDialog(panel, "Cannot disable: slot has active appointments.");
+                                } catch (Exception ex) {
+                                    JOptionPane.showMessageDialog(panel, "Error: " + ex.getMessage());
+                                }
+                            });
                         }
-                        tempCal.add(Calendar.DAY_OF_MONTH, 1);
+
+                        cellBtn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+                        scheduleGrid.add(cellBtn);
                     }
+                    dayCal.add(Calendar.DAY_OF_MONTH, 1);
                 }
 
                 panel.revalidate();
@@ -625,7 +683,7 @@ public class DoctorDashboardFrame extends JFrame {
             cal.setTime(currentWeekStart[0]);
             cal.add(Calendar.DAY_OF_MONTH, -7);
             currentWeekStart[0] = cal.getTime();
-            refreshSchedule.run();
+            refreshHolder[0].run();
         });
 
         nextWeekBtn.addActionListener(e -> {
@@ -633,80 +691,11 @@ public class DoctorDashboardFrame extends JFrame {
             cal.setTime(currentWeekStart[0]);
             cal.add(Calendar.DAY_OF_MONTH, 7);
             currentWeekStart[0] = cal.getTime();
-            refreshSchedule.run();
+            refreshHolder[0].run();
         });
 
-        refreshScheduleBtn.addActionListener(e -> refreshSchedule.run());
-
-        addSlotBtn.addActionListener(e -> {
-            String slot = (String) slotCombo.getSelectedItem();
-            try {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(currentWeekStart[0]);
-                int updated = 0;
-                StringBuilder blockedDates = new StringBuilder();
-                for (int d = 0; d < 5; d++) {
-                    String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime());
-                    if (doctorService.updateDoctorSchedule(doctorId, dateStr, slot, true)) {
-                        updated++;
-                    } else {
-                        if (blockedDates.length() > 0) {
-                            blockedDates.append(", ");
-                        }
-                        blockedDates.append(dateStr);
-                    }
-                    cal.add(Calendar.DAY_OF_MONTH, 1);
-                }
-                if (blockedDates.length() == 0) {
-                    JOptionPane.showMessageDialog(this, "Slot added for the week.");
-                } else if (updated > 0) {
-                    JOptionPane.showMessageDialog(this,
-                            "Slot updated for part of the week.\nBlocked dates: " + blockedDates);
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                            "No slots were updated.\nBlocked dates: " + blockedDates);
-                }
-                refreshSchedule.run();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
-            }
-        });
-
-        removeSlotBtn.addActionListener(e -> {
-            String slot = (String) slotCombo.getSelectedItem();
-            try {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(currentWeekStart[0]);
-                int updated = 0;
-                StringBuilder blockedDates = new StringBuilder();
-                for (int d = 0; d < 5; d++) {
-                    String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime());
-                    if (doctorService.updateDoctorSchedule(doctorId, dateStr, slot, false)) {
-                        updated++;
-                    } else {
-                        if (blockedDates.length() > 0) {
-                            blockedDates.append(", ");
-                        }
-                        blockedDates.append(dateStr);
-                    }
-                    cal.add(Calendar.DAY_OF_MONTH, 1);
-                }
-                if (blockedDates.length() == 0) {
-                    JOptionPane.showMessageDialog(this, "Slot removed for the week.");
-                } else if (updated > 0) {
-                    JOptionPane.showMessageDialog(this,
-                            "Slots updated for part of the week.\nBooked or locked dates: " + blockedDates);
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                            "No slots were updated.\nBooked or locked dates: " + blockedDates);
-                }
-                refreshSchedule.run();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
-            }
-        });
-
-        refreshSchedule.run();
+        refreshBtn.addActionListener(e -> refreshHolder[0].run());
+        refreshHolder[0].run();
         return panel;
     }
 
@@ -715,10 +704,16 @@ public class DoctorDashboardFrame extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        JTextField patientField = new JTextField(20);
+        JComboBox<String> patientCombo = new JComboBox<>();
+        patientCombo.setPreferredSize(new Dimension(200, 28));
+        patientCombo.setFont(new Font("Arial", Font.PLAIN, 13));
+        JButton loadPatientsBtn = new JButton("Load Patients");
+        loadPatientsBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         JButton searchBtn = new JButton("Search History");
-        searchPanel.add(new JLabel("Patient Username:"));
-        searchPanel.add(patientField);
+        searchBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+        searchPanel.add(new JLabel("Select Patient:"));
+        searchPanel.add(patientCombo);
+        searchPanel.add(loadPatientsBtn);
         searchPanel.add(searchBtn);
 
         panel.add(searchPanel, BorderLayout.NORTH);
@@ -728,30 +723,55 @@ public class DoctorDashboardFrame extends JFrame {
         scroll.setBorder(BorderFactory.createTitledBorder("Patient Medical History"));
         panel.add(scroll, BorderLayout.CENTER);
 
-        searchBtn.addActionListener(e -> {
-            String patientUser = patientField.getText().trim();
-            if (patientUser.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter a patient username.");
-                return;
-            }
+        loadPatientsBtn.addActionListener(e -> {
             try {
-                List<String[]> history = doctorService.getPatientHistory(patientUser);
-                String[] columns = {"Appt ID", "Date", "Time", "Status", "Diagnosis", "Treatment", "Prescription", "Notes"};
-                DefaultTableModel model = new DefaultTableModel(columns, 0);
-                for (String[] row : history) {
-                    model.addRow(row);
+                List<String[]> patients = doctorService.getDistinctPatientsForDoctor(doctorId);
+                patientCombo.removeAllItems();
+                for (String[] p : patients) {
+                    patientCombo.addItem(p[0]);
                 }
-                table.setModel(model);
-                applyColorCoding(table, 3);
-                if (history.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "No history found for this patient.");
+                if (patientCombo.getItemCount() == 0) {
+                    patientCombo.addItem("No previous patients");
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             }
         });
 
+        searchBtn.addActionListener(e -> searchPatientHistory(table, patientCombo));
+
+        patientCombo.addActionListener(e -> {
+            if (patientCombo.getSelectedItem() != null
+                    && !patientCombo.getSelectedItem().toString().equals("No previous patients")) {
+                searchPatientHistory(table, patientCombo);
+            }
+        });
+
         return panel;
+    }
+
+    private void searchPatientHistory(JTable table, JComboBox<String> patientCombo) {
+        if (patientCombo.getItemCount() == 0 || patientCombo.getSelectedItem() == null) return;
+        String patientUser = patientCombo.getSelectedItem().toString().trim();
+        if (patientUser.isEmpty() || patientUser.equals("No previous patients")) {
+            JOptionPane.showMessageDialog(this, "Please select a valid patient.");
+            return;
+        }
+        try {
+            List<String[]> history = doctorService.getPatientHistory(patientUser);
+            String[] columns = {"Appt ID", "Date", "Time", "Status", "Diagnosis", "Treatment", "Prescription", "Notes"};
+            DefaultTableModel model = new DefaultTableModel(columns, 0);
+            for (String[] row : history) {
+                model.addRow(row);
+            }
+            table.setModel(model);
+            applyColorCoding(table, 3);
+            if (history.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No history found for this patient.");
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
     }
 
     private JPanel createSettingsPanel() {
@@ -762,26 +782,38 @@ public class DoctorDashboardFrame extends JFrame {
         passwordPanel.setBorder(BorderFactory.createTitledBorder("Change Password"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(8, 5, 8, 5);
 
         JPasswordField currentPw = new JPasswordField(15);
         JPasswordField newPw = new JPasswordField(15);
         JPasswordField confirmPw = new JPasswordField(15);
+        Font pwFont = new Font("Arial", Font.PLAIN, 13);
+        currentPw.setFont(pwFont);
+        newPw.setFont(pwFont);
+        confirmPw.setFont(pwFont);
         JButton changePwBtn = new JButton("Change Password");
+        changePwBtn.setFont(new Font("Arial", Font.BOLD, 13));
         changePwBtn.setBackground(TEAL);
         changePwBtn.setForeground(Color.WHITE);
         changePwBtn.setFocusPainted(false);
 
+        Font labelFont = new Font("Arial", Font.PLAIN, 13);
         gbc.gridx = 0; gbc.gridy = 0;
-        passwordPanel.add(new JLabel("Current Password:"), gbc);
+        JLabel pwLabel1 = new JLabel("Current Password:");
+        pwLabel1.setFont(labelFont);
+        passwordPanel.add(pwLabel1, gbc);
         gbc.gridx = 1;
         passwordPanel.add(currentPw, gbc);
         gbc.gridx = 0; gbc.gridy = 1;
-        passwordPanel.add(new JLabel("New Password:"), gbc);
+        JLabel pwLabel2 = new JLabel("New Password:");
+        pwLabel2.setFont(labelFont);
+        passwordPanel.add(pwLabel2, gbc);
         gbc.gridx = 1;
         passwordPanel.add(newPw, gbc);
         gbc.gridx = 0; gbc.gridy = 2;
-        passwordPanel.add(new JLabel("Confirm Password:"), gbc);
+        JLabel pwLabel3 = new JLabel("Confirm Password:");
+        pwLabel3.setFont(labelFont);
+        passwordPanel.add(pwLabel3, gbc);
         gbc.gridx = 1;
         passwordPanel.add(confirmPw, gbc);
         gbc.gridx = 1; gbc.gridy = 3;
@@ -816,7 +848,7 @@ public class DoctorDashboardFrame extends JFrame {
         contactPanel.setBorder(BorderFactory.createTitledBorder("Update Contact Info"));
         GridBagConstraints gbc2 = new GridBagConstraints();
         gbc2.fill = GridBagConstraints.HORIZONTAL;
-        gbc2.insets = new Insets(5, 5, 5, 5);
+        gbc2.insets = new Insets(8, 5, 8, 5);
 
         try {
             String[] profile = doctorService.getDoctorProfile(doctorId);
@@ -825,22 +857,33 @@ public class DoctorDashboardFrame extends JFrame {
             JTextField contactField = new JTextField(currentContact, 15);
             JTextField nameField = new JTextField(profile != null ? profile[1] : "", 15);
             JTextField specField = new JTextField(profile != null ? profile[2] : "", 15);
+            Font fieldFont = new Font("Arial", Font.PLAIN, 13);
+            contactField.setFont(fieldFont);
+            nameField.setFont(fieldFont);
+            specField.setFont(fieldFont);
 
             JButton updateBtn = new JButton("Update Profile");
+            updateBtn.setFont(new Font("Arial", Font.BOLD, 13));
             updateBtn.setBackground(TEAL);
             updateBtn.setForeground(Color.WHITE);
             updateBtn.setFocusPainted(false);
 
             gbc2.gridx = 0; gbc2.gridy = 0;
-            contactPanel.add(new JLabel("Doctor Name:"), gbc2);
+            JLabel nameLbl = new JLabel("Doctor Name:");
+            nameLbl.setFont(labelFont);
+            contactPanel.add(nameLbl, gbc2);
             gbc2.gridx = 1;
             contactPanel.add(nameField, gbc2);
             gbc2.gridx = 0; gbc2.gridy = 1;
-            contactPanel.add(new JLabel("Specialization:"), gbc2);
+            JLabel specLbl = new JLabel("Specialization:");
+            specLbl.setFont(labelFont);
+            contactPanel.add(specLbl, gbc2);
             gbc2.gridx = 1;
             contactPanel.add(specField, gbc2);
             gbc2.gridx = 0; gbc2.gridy = 2;
-            contactPanel.add(new JLabel("Contact Number:"), gbc2);
+            JLabel contactLbl = new JLabel("Contact Number:");
+            contactLbl.setFont(labelFont);
+            contactPanel.add(contactLbl, gbc2);
             gbc2.gridx = 1;
             contactPanel.add(contactField, gbc2);
             gbc2.gridx = 1; gbc2.gridy = 3;
@@ -879,7 +922,7 @@ public class DoctorDashboardFrame extends JFrame {
             model.addRow(row);
         }
         JTable table = new JTable(model);
-        table.setRowHeight(24);
+        table.setRowHeight(30);
         applyColorCoding(table, statusCol);
         return table;
     }
