@@ -2,6 +2,7 @@ package brigthcare_medical_centre.gui.patient;
 
 import brigthcare_medical_centre.common.AuthenticationInterface;
 import brigthcare_medical_centre.auth.User;
+import brigthcare_medical_centre.auth.CredentialStore;
 import brigthcare_medical_centre.util.Constants;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -13,6 +14,7 @@ public class PatientLoginFrame extends JFrame {
     private AuthenticationInterface authService;
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckBox;
 
     public PatientLoginFrame() {
         connectToServer();
@@ -147,7 +149,13 @@ public class PatientLoginFrame extends JFrame {
         formPanel.add(passwordLabel);
         formPanel.add(Box.createVerticalStrut(6));
         formPanel.add(passwordField);
-        formPanel.add(Box.createVerticalStrut(15));
+        formPanel.add(Box.createVerticalStrut(5));
+
+        rememberMeCheckBox = new JCheckBox("Remember Me");
+        rememberMeCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rememberMeCheckBox.setBackground(Color.WHITE);
+        formPanel.add(rememberMeCheckBox);
+        formPanel.add(Box.createVerticalStrut(10));
         formPanel.add(loginBtn);
 
         card.add(formPanel, BorderLayout.CENTER);
@@ -175,6 +183,8 @@ public class PatientLoginFrame extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
+
+        loadSavedCredentials();
     }
 
     private void doLogin() {
@@ -191,6 +201,11 @@ public class PatientLoginFrame extends JFrame {
         try {
             User user = authService.login(username, password);
             if (user != null && user.getRole().toString().equalsIgnoreCase("PATIENT")) {
+                if (rememberMeCheckBox.isSelected()) {
+                    CredentialStore.save(username, password, "PATIENT");
+                } else {
+                    CredentialStore.clear();
+                }
                 JOptionPane.showMessageDialog(this, "Welcome, " + username + "!");
                 dispose(); // close login window
                 new PatientDashboardFrame(username); // open dashboard
@@ -208,5 +223,14 @@ public class PatientLoginFrame extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new PatientLoginFrame());
+    }
+
+    private void loadSavedCredentials() {
+        CredentialStore saved = CredentialStore.load();
+        if (saved != null && !saved.isExpired() && "PATIENT".equals(saved.getRole())) {
+            usernameField.setText(saved.getUsername());
+            passwordField.setText(saved.getPassword());
+            rememberMeCheckBox.setSelected(true);
+        }
     }
 }   

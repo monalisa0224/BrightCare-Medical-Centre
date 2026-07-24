@@ -3,6 +3,7 @@ package brigthcare_medical_centre.gui.doctor;
 import brigthcare_medical_centre.common.AuthenticationInterface;
 import brigthcare_medical_centre.common.DoctorInterface;
 import brigthcare_medical_centre.auth.User;
+import brigthcare_medical_centre.auth.CredentialStore;
 import brigthcare_medical_centre.util.Constants;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -15,6 +16,7 @@ public class DoctorLoginFrame extends JFrame {
     private DoctorInterface doctorService;
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckBox;
 
     public DoctorLoginFrame() {
         connectToServer();
@@ -56,6 +58,8 @@ public class DoctorLoginFrame extends JFrame {
         usernameField = new JTextField(15);
         passwordField = new JPasswordField(15);
 
+        rememberMeCheckBox = new JCheckBox("Remember Me");
+
         JButton loginBtn = new JButton("Login");
         loginBtn.setBackground(new Color(0, 102, 102));
         loginBtn.setForeground(Color.WHITE);
@@ -73,6 +77,9 @@ public class DoctorLoginFrame extends JFrame {
         formPanel.add(passwordField, gbc);
 
         gbc.gridx = 1; gbc.gridy = 2;
+        formPanel.add(rememberMeCheckBox, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(loginBtn, gbc);
 
@@ -88,6 +95,8 @@ public class DoctorLoginFrame extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
+
+        loadSavedCredentials();
     }
 
     private void doLogin() {
@@ -111,6 +120,11 @@ public class DoctorLoginFrame extends JFrame {
                             "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                if (rememberMeCheckBox.isSelected()) {
+                    CredentialStore.save(username, password, "DOCTOR");
+                } else {
+                    CredentialStore.clear();
+                }
                 String[] docProfile = doctorService.getDoctorProfile(doctorId);
                 String doctorName = (docProfile != null) ? docProfile[1] : username;
 
@@ -131,5 +145,14 @@ public class DoctorLoginFrame extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new DoctorLoginFrame());
+    }
+
+    private void loadSavedCredentials() {
+        CredentialStore saved = CredentialStore.load();
+        if (saved != null && !saved.isExpired() && "DOCTOR".equals(saved.getRole())) {
+            usernameField.setText(saved.getUsername());
+            passwordField.setText(saved.getPassword());
+            rememberMeCheckBox.setSelected(true);
+        }
     }
 }

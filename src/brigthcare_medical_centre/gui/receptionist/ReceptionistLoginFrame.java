@@ -3,6 +3,7 @@ package brigthcare_medical_centre.gui.receptionist;
 import brigthcare_medical_centre.common.AuthenticationInterface;
 import brigthcare_medical_centre.common.ReceptionistInterface;
 import brigthcare_medical_centre.auth.User;
+import brigthcare_medical_centre.auth.CredentialStore;
 import brigthcare_medical_centre.util.Constants;
 
 import java.rmi.registry.LocateRegistry;
@@ -16,6 +17,7 @@ public class ReceptionistLoginFrame extends JFrame {
     private ReceptionistInterface receptionistService;
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckBox;
 
     public ReceptionistLoginFrame() {
         connectToServer();
@@ -61,6 +63,8 @@ public class ReceptionistLoginFrame extends JFrame {
         usernameField = new JTextField(15);
         passwordField = new JPasswordField(15);
 
+        rememberMeCheckBox = new JCheckBox("Remember Me");
+
         JButton loginBtn = new JButton("Login");
         loginBtn.setBackground(new Color(0, 102, 204)); // Matching Blue
         loginBtn.setForeground(Color.WHITE);
@@ -78,6 +82,9 @@ public class ReceptionistLoginFrame extends JFrame {
         formPanel.add(passwordField, gbc);
 
         gbc.gridx = 1; gbc.gridy = 2;
+        formPanel.add(rememberMeCheckBox, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(loginBtn, gbc);
 
@@ -93,6 +100,8 @@ public class ReceptionistLoginFrame extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
+
+        loadSavedCredentials();
     }
 
     private void doLogin() {
@@ -111,6 +120,11 @@ public class ReceptionistLoginFrame extends JFrame {
             
             // Checking if the user exists and has the RECEPTIONIST role
             if (user != null && user.getRole().toString().equalsIgnoreCase("RECEPTIONIST")) {
+                if (rememberMeCheckBox.isSelected()) {
+                    CredentialStore.save(username, password, "RECEPTIONIST");
+                } else {
+                    CredentialStore.clear();
+                }
                 
                 JOptionPane.showMessageDialog(this, "Welcome, Receptionist " + username + "!");
                 dispose(); // Close the login screen
@@ -132,5 +146,14 @@ public class ReceptionistLoginFrame extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new ReceptionistLoginFrame());
+    }
+
+    private void loadSavedCredentials() {
+        CredentialStore saved = CredentialStore.load();
+        if (saved != null && !saved.isExpired() && "RECEPTIONIST".equals(saved.getRole())) {
+            usernameField.setText(saved.getUsername());
+            passwordField.setText(saved.getPassword());
+            rememberMeCheckBox.setSelected(true);
+        }
     }
 }

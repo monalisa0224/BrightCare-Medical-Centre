@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.rmi.Naming;
 import javax.swing.*;
 import brigthcare_medical_centre.auth.User;
+import brigthcare_medical_centre.auth.CredentialStore;
 import brigthcare_medical_centre.common.AdminInterface;
 import brigthcare_medical_centre.common.AuthenticationInterface;
 import brigthcare_medical_centre.common.ReportInterface;
@@ -14,11 +15,12 @@ public class AdminLoginFrame extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckBox;
 
     public AdminLoginFrame() {
         setTitle("BrightCare - Admin Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 250);
+        setSize(400, 280);
         setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -28,13 +30,16 @@ public class AdminLoginFrame extends JFrame {
         titleLabel.setFont(titleLabel.getFont().deriveFont(18.0f));
         panel.add(titleLabel, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         formPanel.add(new JLabel("Username:"));
         usernameField = new JTextField();
         formPanel.add(usernameField);
         formPanel.add(new JLabel("Password:"));
         passwordField = new JPasswordField();
         formPanel.add(passwordField);
+        rememberMeCheckBox = new JCheckBox("Remember Me");
+        formPanel.add(new JLabel());
+        formPanel.add(rememberMeCheckBox);
         panel.add(formPanel, BorderLayout.CENTER);
 
         JButton loginButton = new JButton("Login");
@@ -44,6 +49,8 @@ public class AdminLoginFrame extends JFrame {
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(panel);
+
+        loadSavedCredentials();
     }
 
     private void login() {
@@ -67,6 +74,11 @@ public class AdminLoginFrame extends JFrame {
 
             if (user != null) {
                 if (user.getRole() == brigthcare_medical_centre.auth.UserRole.ADMIN) {
+                    if (rememberMeCheckBox.isSelected()) {
+                        CredentialStore.save(username, password, "ADMIN");
+                    } else {
+                        CredentialStore.clear();
+                    }
                     JOptionPane.showMessageDialog(this, "Login successful!");
                     dispose();
                     new AdminDashboardFrame(user, adminService, reportService).setVisible(true);
@@ -84,5 +96,14 @@ public class AdminLoginFrame extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new AdminLoginFrame().setVisible(true));
+    }
+
+    private void loadSavedCredentials() {
+        CredentialStore saved = CredentialStore.load();
+        if (saved != null && !saved.isExpired() && "ADMIN".equals(saved.getRole())) {
+            usernameField.setText(saved.getUsername());
+            passwordField.setText(saved.getPassword());
+            rememberMeCheckBox.setSelected(true);
+        }
     }
 }
