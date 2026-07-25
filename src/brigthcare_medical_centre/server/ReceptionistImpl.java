@@ -4,6 +4,7 @@ import brigthcare_medical_centre.common.PatientInfo;
 import brigthcare_medical_centre.common.ReceptionistInterface;
 import brigthcare_medical_centre.database.ReceptionistDB;
 import brigthcare_medical_centre.database.DerbyConnection;
+import brigthcare_medical_centre.util.SslUtil;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -17,6 +18,13 @@ public class ReceptionistImpl extends UnicastRemoteObject implements Receptionis
 
     public ReceptionistImpl() throws RemoteException {
         super();
+        receptionistDB = new ReceptionistDB();
+    }
+
+    public ReceptionistImpl(boolean useSsl) throws RemoteException {
+        super(0,
+                useSsl ? SslUtil.clientSocketFactory() : null,
+                useSsl ? SslUtil.serverSocketFactory() : null);
         receptionistDB = new ReceptionistDB();
     }
 

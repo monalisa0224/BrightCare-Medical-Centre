@@ -14,5 +14,10 @@ if not exist "%CLASSES%" (
 )
 
 echo Starting BrightCare RMI Server...
-java -cp "%CLASSES%;%LIBS%" brigthcare_medical_centre.server.ServerDriver
+java -Dbrightcare.rmi.port=1099 ^
+     -Dbrightcare.receptionist.rmi.port=1100 ^
+     -Dbrightcare.ssl.enabled=true ^
+     -Djavax.net.ssl.keyStore=server.jks ^
+     -Djavax.net.ssl.keyStorePassword=brightcare123 ^
+     -cp "%CLASSES%;%LIBS%" brigthcare_medical_centre.server.ServerDriver
 pause

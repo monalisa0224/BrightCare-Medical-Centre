@@ -2,6 +2,7 @@ package brigthcare_medical_centre.util;
 
 public class Constants {
     public static final int RMI_PORT = Integer.getInteger("brightcare.rmi.port", 1099);
+    public static final int RECEPTIONIST_RMI_PORT = Integer.getInteger("brightcare.receptionist.rmi.port", 1100);
     public static final String RMI_HOST = System.getProperty("brightcare.rmi.host", "localhost");
     public static final String DB_URL = System.getProperty("brightcare.db.url", "jdbc:derby:BrightCareDB;create=true");
     public static final String DB_USER = "";

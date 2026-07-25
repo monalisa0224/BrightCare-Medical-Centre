@@ -9,11 +9,18 @@ import brigthcare_medical_centre.common.AuthenticationInterface;
 import brigthcare_medical_centre.database.AuditLogger;
 import brigthcare_medical_centre.database.DatabaseSetup;
 import brigthcare_medical_centre.database.DerbyConnection;
+import brigthcare_medical_centre.util.SslUtil;
 
 public class AuthenticationImpl extends UnicastRemoteObject implements AuthenticationInterface {
 
     public AuthenticationImpl() throws RemoteException {
         super();
+    }
+
+    public AuthenticationImpl(boolean useSsl) throws RemoteException {
+        super(0,
+                useSsl ? SslUtil.clientSocketFactory() : null,
+                useSsl ? SslUtil.serverSocketFactory() : null);
     }
 
     @Override

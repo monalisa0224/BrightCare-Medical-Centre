@@ -2,13 +2,9 @@ package brigthcare_medical_centre.gui.receptionist;
 
 import brigthcare_medical_centre.common.PatientInfo;
 import brigthcare_medical_centre.common.ReceptionistInterface;
-import brigthcare_medical_centre.util.Constants;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.List;
 
 public class ReceptionistDashboardFrame extends JFrame {
@@ -26,20 +22,8 @@ public class ReceptionistDashboardFrame extends JFrame {
     public ReceptionistDashboardFrame() {
         super("BrightCare Clinic - Receptionist Portal");
         
-        connectToServer();
         initUI();
         refreshPatientTable();
-    }
-
-    private void connectToServer() {
-        try {
-            Registry registry = LocateRegistry.getRegistry(Constants.RMI_HOST, Constants.RMI_PORT);
-            receptionistService = (ReceptionistInterface) registry.lookup(Constants.RECEPTIONIST_SERVICE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Cannot connect to Server. Is the server running?\n" + e.getMessage(), 
-                "Connection Error", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private void initUI() {

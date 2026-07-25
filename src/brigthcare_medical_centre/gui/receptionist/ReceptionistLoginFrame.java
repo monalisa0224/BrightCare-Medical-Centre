@@ -5,6 +5,7 @@ import brigthcare_medical_centre.common.ReceptionistInterface;
 import brigthcare_medical_centre.auth.User;
 import brigthcare_medical_centre.auth.CredentialStore;
 import brigthcare_medical_centre.util.Constants;
+import brigthcare_medical_centre.util.SslUtil;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -27,12 +28,18 @@ public class ReceptionistLoginFrame extends JFrame {
 
     private void connectToServer() {
         try {
-            Registry registry = LocateRegistry.getRegistry(Constants.RMI_HOST, Constants.RMI_PORT);
+            System.setProperty("javax.net.ssl.trustStore", "clienttrust.jks");
+            System.setProperty("javax.net.ssl.trustStorePassword", "brightcare123");
+
+            SslUtil.validateClientSSL();
+        
+            Registry registry = LocateRegistry.getRegistry(
+                    Constants.RMI_HOST,
+                    Constants.RECEPTIONIST_RMI_PORT,
+                    SslUtil.clientSocketFactory());
             authService = (AuthenticationInterface) registry.lookup(Constants.AUTH_SERVICE);
             
-            // Looking up the Receptionist Service 
-            // (Note: If your team added RECEPTIONIST_SERVICE to Constants.java, you can use Constants.RECEPTIONIST_SERVICE here)
-            receptionistService = (ReceptionistInterface) registry.lookup("ReceptionistService");
+            receptionistService = (ReceptionistInterface) registry.lookup(Constants.RECEPTIONIST_SERVICE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Cannot connect to server:\n" + e.getMessage(),
