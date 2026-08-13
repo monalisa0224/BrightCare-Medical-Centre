@@ -1,10 +1,17 @@
 package brigthcare_medical_centre.database;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class PatientDB {
+
+    // Standard clinic slots for a day — mirrors the doctor module's schedule grid,
+    // which treats a slot with no DOCTOR_SCHEDULE row as open by default.
+    private static final String[] DEFAULT_SLOTS = {"09:00", "10:00", "11:00", "13:00", "14:00"};
 
     private Connection getConnection() throws SQLException {
         return DerbyConnection.getConnection();
@@ -32,6 +39,14 @@ public class PatientDB {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                // A slot with no DOCTOR_SCHEDULE row yet is treated as open-by-default
+                // (see getDoctorAvailability below). reserveAvailableSlot() only flips an
+                // *existing* available row to unavailable, so materialize that default
+                // row first if nobody has explicitly toggled this slot before.
+                if (!AppointmentDbSupport.slotExists(conn, doctorId, date, time)) {
+                    AppointmentDbSupport.insertSlotAvailability(conn, doctorId, date, time, true);
+                }
+
                 if (!AppointmentDbSupport.reserveAvailableSlot(conn, doctorId, date, time, null)) {
                     conn.rollback();
                     return false;
@@ -170,23 +185,49 @@ public class PatientDB {
     }
 
     // Check doctor availability
+    // A slot counts as available unless the doctor explicitly closed it
+    // (DOCTOR_SCHEDULE.IsAvailable = false) or it's already booked — a slot with
+    // no DOCTOR_SCHEDULE row at all is treated as open by default, matching how
+    // the doctor's own schedule grid renders untouched slots as "Available".
     public List<String> getDoctorAvailability(int doctorId, String date) {
-        List<String> slots = new ArrayList<>();
-        String sql = "SELECT TimeSlot FROM DOCTOR_SCHEDULE "
-                   + "WHERE DoctorID = ? AND ScheduleDate = ? AND IsAvailable = true "
-                   + "ORDER BY TimeSlot";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, doctorId);
-            ps.setString(2, date);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                slots.add(rs.getString("TimeSlot"));
+        // Past dates are never bookable — matches the doctor's own schedule grid,
+        // which disables ("--") any day before today rather than showing it open.
+        try {
+            if (LocalDate.parse(date).isBefore(LocalDate.now())) {
+                return new ArrayList<>();
+            }
+        } catch (DateTimeParseException ignored) {
+            // Unparsable date — fall through and let the normal query run.
+        }
+
+        List<String> available = new ArrayList<>(Arrays.asList(DEFAULT_SLOTS));
+
+        String disabledSql = "SELECT TimeSlot FROM DOCTOR_SCHEDULE "
+                   + "WHERE DoctorID = ? AND ScheduleDate = ? AND IsAvailable = false";
+        String bookedSql = "SELECT ApptTime FROM APPOINTMENTS "
+                   + "WHERE DoctorID = ? AND ApptDate = ? AND Status IN ('PENDING', 'ACCEPTED')";
+
+        try (Connection conn = getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(disabledSql)) {
+                ps.setInt(1, doctorId);
+                ps.setString(2, date);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    available.remove(rs.getString("TimeSlot"));
+                }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(bookedSql)) {
+                ps.setInt(1, doctorId);
+                ps.setString(2, date);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    available.remove(rs.getString("ApptTime"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return slots;
+        return available;
     }
     
     // Get all doctors

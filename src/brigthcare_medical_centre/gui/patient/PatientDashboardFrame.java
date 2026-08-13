@@ -35,7 +35,10 @@ public class PatientDashboardFrame extends JFrame {
 
 private void buildUI() {
     setTitle("BrightCare Medical Centre - Patient Portal");
-    setSize(750, 600);
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    int frameWidth = Math.max(750, (int) (screenSize.width * 0.45));
+    int frameHeight = Math.max(600, (int) (screenSize.height * 0.65));
+    setSize(frameWidth, frameHeight);
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     setLayout(new BorderLayout());
     getContentPane().setBackground(new Color(245, 247, 250));
@@ -48,13 +51,13 @@ private void buildUI() {
     JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
     headerLeft.setBackground(new Color(41, 128, 185));
     JLabel headerTitle = new JLabel("Patient Portal  |  " + loggedInUsername);
-    headerTitle.setFont(new Font("Times New Roman", Font.BOLD, 18));
+    headerTitle.setFont(new Font("Arial", Font.BOLD, 22));
     headerTitle.setForeground(Color.WHITE);
     headerLeft.add(headerTitle);
     headerPanel.add(headerLeft, BorderLayout.WEST);
 
     JButton btnLogout = new JButton("Logout");
-    btnLogout.setFont(new Font("Times New Roman", Font.BOLD, 12));
+    btnLogout.setFont(new Font("Arial", Font.BOLD, 16));
     btnLogout.setBackground(new Color(192, 57, 43));
     btnLogout.setForeground(Color.WHITE);
     btnLogout.setFocusPainted(false);
@@ -77,7 +80,7 @@ private void buildUI() {
     welcomeBar.setBackground(new Color(214, 234, 248));
     welcomeBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(174, 214, 241)));
     JLabel welcomeLabel = new JLabel("Welcome back, " + loggedInUsername + "!   How are you today?");
-    welcomeLabel.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+    welcomeLabel.setFont(new Font("Arial", Font.PLAIN, 17));
     welcomeLabel.setForeground(new Color(31, 97, 141));
     welcomeBar.add(welcomeLabel);
 
@@ -161,11 +164,11 @@ private JPanel createCard(String title, String description, Color accentColor,
     textPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 5, 15));
 
     JLabel titleLabel = new JLabel(title);
-    titleLabel.setFont(new Font("Arial", Font.BOLD, 13));
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 17));
     titleLabel.setForeground(new Color(44, 62, 80));
 
     JLabel descLabel = new JLabel(description);
-    descLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+    descLabel.setFont(new Font("Arial", Font.PLAIN, 15));
     descLabel.setForeground(new Color(127, 140, 141));
 
     textPanel.add(titleLabel);
@@ -200,7 +203,7 @@ private JPanel createCard(String title, String description, Color accentColor,
         String currentAddress = (profile != null && profile[2] != null) ? profile[2] : "";
 
         JDialog dialog = new JDialog(this, "Update Personal Info", true);
-        dialog.setSize(460, 450);
+        dialog.setSize(500, 560);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
         dialog.getContentPane().setBackground(Color.WHITE);
@@ -210,10 +213,10 @@ private JPanel createCard(String title, String description, Color accentColor,
         header.setBackground(new Color(52, 152, 219));
         header.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         JLabel title = new JLabel("Update Personal Information");
-        title.setFont(new Font("Times New Roman", Font.BOLD, 18));
+        title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setForeground(Color.WHITE);
         JLabel subtitle = new JLabel("Edit your contact number and address below");
-        subtitle.setFont(new Font("Times New Roman", Font.ITALIC, 12));
+        subtitle.setFont(new Font("Arial", Font.ITALIC, 16));
         subtitle.setForeground(new Color(200, 230, 255));
         header.add(title);
         header.add(subtitle);
@@ -229,27 +232,27 @@ private JPanel createCard(String title, String description, Color accentColor,
 
         // Contact field
         JLabel contactLabel = new JLabel("Contact Number");
-        contactLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        contactLabel.setFont(new Font("Arial", Font.BOLD, 17));
         contactLabel.setForeground(new Color(44, 62, 80));
 
         JTextField contactField = new JTextField(currentContact);
-        contactField.setFont(new Font("Times New Roman", Font.PLAIN, 13));        
+        contactField.setFont(new Font("Arial", Font.PLAIN, 17));        
         contactField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
             BorderFactory.createEmptyBorder(12, 10, 12, 10)  // ← 12 top/bottom instead of 8
         ));
 
         JLabel contactHint = new JLabel("e.g. 0123456789 (7-15 digits)");
-        contactHint.setFont(new Font("Times New Roman", Font.ITALIC, 11));
+        contactHint.setFont(new Font("Arial", Font.ITALIC, 15));
         contactHint.setForeground(Color.GRAY);
 
         // Address field
         JLabel addressLabel = new JLabel("Address");
-        addressLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        addressLabel.setFont(new Font("Arial", Font.BOLD, 17));
         addressLabel.setForeground(new Color(44, 62, 80));
 
         JTextField addressField = new JTextField(currentAddress);
-        addressField.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        addressField.setFont(new Font("Arial", Font.PLAIN, 17));
         addressField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
             BorderFactory.createEmptyBorder(12, 10, 12, 10)  // ← same padding
@@ -257,7 +260,7 @@ private JPanel createCard(String title, String description, Color accentColor,
 
 
         JLabel addressHint = new JLabel("e.g. Kuala Lumpur, Bukit Jalil");
-        addressHint.setFont(new Font("Times New Roman", Font.ITALIC, 11));
+        addressHint.setFont(new Font("Arial", Font.ITALIC, 15));
         addressHint.setForeground(Color.GRAY);
 
         // Layout
@@ -268,12 +271,14 @@ private JPanel createCard(String title, String description, Color accentColor,
         gbc.gridy = 2;
         formPanel.add(contactHint, gbc);
         gbc.gridy = 3;
-        formPanel.add(Box.createVerticalStrut(15), gbc); 
+        formPanel.add(Box.createVerticalStrut(8), gbc);
         gbc.gridy = 4;
         formPanel.add(addressLabel, gbc);
         gbc.gridy = 5;
         formPanel.add(addressField, gbc);
         gbc.gridy = 6;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.NORTH;
         formPanel.add(addressHint, gbc);
 
         dialog.add(formPanel, BorderLayout.CENTER);
@@ -284,10 +289,11 @@ private JPanel createCard(String title, String description, Color accentColor,
         footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)));
 
         JButton cancelBtn = makeDialogBtn("Cancel", new Color(150, 150, 150));
+        cancelBtn.setPreferredSize(new Dimension(110, 38));
         cancelBtn.addActionListener(e -> dialog.dispose());
 
         JButton saveBtn = makeDialogBtn("Save Changes", new Color(39, 174, 96));
-        saveBtn.setPreferredSize(new Dimension(120, 35));
+        saveBtn.setPreferredSize(new Dimension(160, 38));
         saveBtn.addActionListener(e -> {
             String newContact = contactField.getText().trim();
             String newAddress = addressField.getText().trim();
@@ -364,7 +370,7 @@ private void doBookAppointment() {
         header.setBackground(new Color(39, 174, 96));
         header.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         JLabel headerLabel = new JLabel("Book New Appointment");
-        headerLabel.setFont(new Font("Times New Roman", Font.BOLD, 18));
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 22));
         headerLabel.setForeground(Color.WHITE);
         header.add(headerLabel, BorderLayout.WEST);
         dialog.add(header, BorderLayout.NORTH);
@@ -384,7 +390,7 @@ private void doBookAppointment() {
             doctorOptions[i] = d[1] + " — " + d[2];
         }
         JComboBox<String> doctorDropdown = new JComboBox<>(doctorOptions);
-        doctorDropdown.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        doctorDropdown.setFont(new Font("Arial", Font.PLAIN, 17));
 
         // Date spinner
         SpinnerDateModel dateModel = new SpinnerDateModel(
@@ -392,12 +398,12 @@ private void doBookAppointment() {
         JSpinner dateSpinner = new JSpinner(dateModel);
         JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd");
         dateSpinner.setEditor(dateEditor);
-        dateSpinner.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        dateSpinner.setFont(new Font("Arial", Font.PLAIN, 17));
 
         JLabel doctorLabel = new JLabel("Select Doctor:");
-        doctorLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        doctorLabel.setFont(new Font("Arial", Font.BOLD, 17));
         JLabel dateLabel = new JLabel("Select Date:");
-        dateLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        dateLabel.setFont(new Font("Arial", Font.BOLD, 17));
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
         formPanel.add(doctorLabel, gbc);
@@ -410,7 +416,7 @@ private void doBookAppointment() {
 
         // Search button
         JButton searchBtn = new JButton("Search Available Slots");
-        searchBtn.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        searchBtn.setFont(new Font("Arial", Font.BOLD, 17));
         searchBtn.setBackground(new Color(41, 128, 185));
         searchBtn.setForeground(Color.WHITE);
         searchBtn.setFocusPainted(false);
@@ -428,14 +434,14 @@ private void doBookAppointment() {
         ));
 
         JLabel slotsTitle = new JLabel("Available Time Slots — click a slot to select:");
-        slotsTitle.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        slotsTitle.setFont(new Font("Arial", Font.BOLD, 17));
         slotsTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
         slotsPanel.add(slotsTitle, BorderLayout.NORTH);
 
         JPanel slotButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
         slotButtonPanel.setBackground(Color.WHITE);
         JLabel hintLabel = new JLabel("Click 'Search Available Slots' above to begin.");
-        hintLabel.setFont(new Font("Times New Roman", Font.ITALIC, 12));
+        hintLabel.setFont(new Font("Arial", Font.ITALIC, 16));
         hintLabel.setForeground(Color.GRAY);
         slotButtonPanel.add(hintLabel);
         slotsPanel.add(slotButtonPanel, BorderLayout.CENTER);
@@ -449,11 +455,11 @@ private void doBookAppointment() {
         ));
 
         JLabel selectedSlotLabel = new JLabel("No slot selected.");
-        selectedSlotLabel.setFont(new Font("Times New Roman", Font.ITALIC, 12));
+        selectedSlotLabel.setFont(new Font("Arial", Font.ITALIC, 16));
         selectedSlotLabel.setForeground(Color.GRAY);
 
         JButton confirmBtn = new JButton("Confirm Booking ›");
-        confirmBtn.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        confirmBtn.setFont(new Font("Arial", Font.BOLD, 17));
         confirmBtn.setBackground(new Color(39, 174, 96));
         confirmBtn.setForeground(Color.WHITE);
         confirmBtn.setFocusPainted(false);
@@ -495,13 +501,13 @@ private void doBookAppointment() {
 
                 if (slots.isEmpty()) {
                     JLabel empty = new JLabel("No available slots on " + selectedDate[0] + ". Try another date.");
-                    empty.setFont(new Font("Times New Roman", Font.ITALIC, 12));
+                    empty.setFont(new Font("Arial", Font.ITALIC, 16));
                     empty.setForeground(new Color(192, 57, 43));
                     slotButtonPanel.add(empty);
                 } else {
                     for (String slot : slots) {
                         JButton slotBtn = new JButton(slot);
-                        slotBtn.setFont(new Font("Times New Roman", Font.BOLD, 13));
+                        slotBtn.setFont(new Font("Arial", Font.BOLD, 17));
                         slotBtn.setBackground(new Color(200, 255, 200));
                         slotBtn.setForeground(new Color(39, 174, 96));
                         slotBtn.setFocusPainted(false);
@@ -525,7 +531,7 @@ private void doBookAppointment() {
                                 "Selected:  " + slot + "  on  " + selectedDate[0]);
                             selectedSlotLabel.setForeground(new Color(39, 174, 96));
                             selectedSlotLabel.setFont(
-                                new Font("Times New Roman", Font.BOLD, 12));
+                                new Font("Arial", Font.BOLD, 16));
                             confirmBtn.setEnabled(true);
                             confirmBtn.setBackground(new Color(39, 174, 96));  // green when active
                             confirmBtn.setForeground(Color.WHITE);
@@ -606,10 +612,10 @@ private void doBookAppointment() {
         header.setBackground(new Color(192, 57, 43));
         header.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         JLabel headerLabel = new JLabel("Cancel Appointment");
-        headerLabel.setFont(new Font("Times New Roman", Font.BOLD, 18));
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 22));
         headerLabel.setForeground(Color.WHITE);
         JLabel subLabel = new JLabel("Pending and confirmed appointments can be cancelled");
-        subLabel.setFont(new Font("Times New Roman", Font.ITALIC, 11));
+        subLabel.setFont(new Font("Arial", Font.ITALIC, 15));
         subLabel.setForeground(new Color(255, 200, 200));
         JPanel headerText = new JPanel(new GridLayout(2, 1));
         headerText.setBackground(new Color(192, 57, 43));
@@ -630,7 +636,7 @@ private void doBookAppointment() {
             emptyPanel.setBorder(BorderFactory.createEmptyBorder(30, 20, 20, 20));
 
             JLabel iconLabel = new JLabel("No pending or confirmed appointments to cancel.", SwingConstants.CENTER);
-            iconLabel.setFont(new Font("Times New Roman", Font.BOLD, 15));
+            iconLabel.setFont(new Font("Arial", Font.BOLD, 19));
             iconLabel.setForeground(new Color(44, 62, 80));
             emptyPanel.add(iconLabel);
 
@@ -669,7 +675,7 @@ private void doBookAppointment() {
             infoPanel.setBackground(Color.WHITE);
 
             JLabel doctorLabel = new JLabel("Dr. " + appt[1]);
-            doctorLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+            doctorLabel.setFont(new Font("Arial", Font.BOLD, 18));
             doctorLabel.setForeground(new Color(44, 62, 80));
 
             JPanel detailsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -693,7 +699,7 @@ private void doBookAppointment() {
 
             // Right — cancel button
             JButton cancelBtn = new JButton("Cancel");
-            cancelBtn.setFont(new Font("Times New Roman", Font.BOLD, 12));
+            cancelBtn.setFont(new Font("Arial", Font.BOLD, 16));
             cancelBtn.setBackground(new Color(192, 57, 43));
             cancelBtn.setForeground(Color.WHITE);
             cancelBtn.setFocusPainted(false);
@@ -772,7 +778,7 @@ private void doBookAppointment() {
 // ── ADD THESE HELPER METHODS ──
 private JLabel makeInfoChip(String text, Color color) {
     JLabel chip = new JLabel("  " + text + "  ");
-    chip.setFont(new Font("Times New Roman", Font.BOLD, 11));
+    chip.setFont(new Font("Arial", Font.BOLD, 15));
     chip.setForeground(color);
     chip.setBackground(new Color(
         Math.min(color.getRed() + 180, 255),
@@ -785,7 +791,7 @@ private JLabel makeInfoChip(String text, Color color) {
 
     private JButton makeDialogBtn(String text, Color color) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Times New Roman", Font.BOLD, 12));
+        btn.setFont(new Font("Arial", Font.BOLD, 16));
         btn.setBackground(color);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
@@ -822,7 +828,7 @@ private JLabel makeInfoChip(String text, Color color) {
         ));
 
         JLabel totalLabel = new JLabel("Total: " + list.size() + " appointment(s)");
-        totalLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        totalLabel.setFont(new Font("Arial", Font.BOLD, 17));
         totalLabel.setForeground(new Color(31, 97, 141));
 
         JLabel pendingBadge = makeBadge("● PENDING: " + pendingCount, new Color(255, 165, 0));
@@ -840,7 +846,7 @@ private JLabel makeInfoChip(String text, Color color) {
             emptyPanel.setBackground(Color.WHITE);
             emptyPanel.setPreferredSize(new Dimension(600, 150));
             JLabel emptyLabel = new JLabel("No upcoming appointments found.", SwingConstants.CENTER);
-            emptyLabel.setFont(new Font("Times New Roman", Font.ITALIC, 14));
+            emptyLabel.setFont(new Font("Arial", Font.ITALIC, 18));
             emptyLabel.setForeground(Color.GRAY);
             emptyPanel.add(emptyLabel, BorderLayout.CENTER);
             mainPanel.add(emptyPanel, BorderLayout.CENTER);
@@ -868,13 +874,13 @@ private JLabel makeInfoChip(String text, Color color) {
 
         JTable table = new JTable(model);
         table.setRowHeight(35);
-        table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        table.setFont(new Font("Arial", Font.PLAIN, 17));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setSelectionBackground(new Color(214, 234, 248));
 
         // Header style
-        table.getTableHeader().setFont(new Font("Times New Roman", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 17));
         table.getTableHeader().setBackground(new Color(41, 128, 185));
         table.getTableHeader().setForeground(Color.WHITE);
         table.getTableHeader().setPreferredSize(new Dimension(0, 35));
@@ -910,7 +916,7 @@ private JLabel makeInfoChip(String text, Color color) {
 
                 // Status column special coloring
                 if (col == 4) {
-                    setFont(new Font("Times New Roman", Font.BOLD, 12));
+                    setFont(new Font("Arial", Font.BOLD, 16));
                     if (status.equalsIgnoreCase("PENDING")) {
                         setForeground(new Color(180, 100, 0));
                         setBackground(new Color(255, 248, 225));
@@ -919,7 +925,7 @@ private JLabel makeInfoChip(String text, Color color) {
                         setBackground(new Color(232, 255, 240));
                     }
                 } else {
-                    setFont(new Font("Times New Roman", Font.PLAIN, 13));
+                    setFont(new Font("Arial", Font.PLAIN, 17));
                     setForeground(new Color(44, 62, 80));
                 }
                 return this;
@@ -935,7 +941,7 @@ private JLabel makeInfoChip(String text, Color color) {
         JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
         legend.setBackground(Color.WHITE);
         legend.add(new JLabel("Legend:") {{
-            setFont(new Font("Times New Roman", Font.BOLD, 11));
+            setFont(new Font("Arial", Font.BOLD, 15));
             setForeground(Color.GRAY);
         }});
         legend.add(makeBadge("PENDING = Awaiting doctor approval", new Color(180, 100, 0)));
@@ -953,7 +959,7 @@ private JLabel makeInfoChip(String text, Color color) {
 // Helper — add this after doViewSchedule()
 private JLabel makeBadge(String text, Color color) {
     JLabel badge = new JLabel(text);
-    badge.setFont(new Font("Times New Roman", Font.BOLD, 11));
+    badge.setFont(new Font("Arial", Font.BOLD, 15));
     badge.setForeground(color);
     return badge;
 }
@@ -986,7 +992,7 @@ private JLabel makeBadge(String text, Color color) {
         ));
 
         JLabel totalLabel = new JLabel("Total Records: " + list.size());
-        totalLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        totalLabel.setFont(new Font("Arial", Font.BOLD, 17));
         totalLabel.setForeground(new Color(44, 62, 80));
 
         summaryBar.add(totalLabel);
@@ -1002,7 +1008,7 @@ private JLabel makeBadge(String text, Color color) {
             emptyPanel.setBackground(Color.WHITE);
             emptyPanel.setPreferredSize(new Dimension(600, 150));
             JLabel emptyLabel = new JLabel("No appointment history found.", SwingConstants.CENTER);
-            emptyLabel.setFont(new Font("Times New Roman", Font.ITALIC, 14));
+            emptyLabel.setFont(new Font("Arial", Font.ITALIC, 18));
             emptyLabel.setForeground(Color.GRAY);
             emptyPanel.add(emptyLabel, BorderLayout.CENTER);
             mainPanel.add(emptyPanel, BorderLayout.CENTER);
@@ -1030,14 +1036,14 @@ private JLabel makeBadge(String text, Color color) {
 
         JTable table = new JTable(model);
         table.setRowHeight(35);
-        table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        table.setFont(new Font("Arial", Font.PLAIN, 17));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setSelectionBackground(new Color(214, 234, 248));
         table.setEnabled(false);
 
         // Header
-        table.getTableHeader().setFont(new Font("Times New Roman", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 17));
         table.getTableHeader().setBackground(new Color(52, 73, 94));
         table.getTableHeader().setForeground(Color.WHITE);
         table.getTableHeader().setPreferredSize(new Dimension(0, 35));
@@ -1070,7 +1076,7 @@ private JLabel makeBadge(String text, Color color) {
 
                 // Status column coloring
                 if (col == 4) {
-                    setFont(new Font("Times New Roman", Font.BOLD, 12));
+                    setFont(new Font("Arial", Font.BOLD, 16));
                     switch (status.toUpperCase()) {
                         case "COMPLETED":
                             setForeground(new Color(41, 128, 185));
@@ -1088,7 +1094,7 @@ private JLabel makeBadge(String text, Color color) {
                             setForeground(new Color(44, 62, 80));
                     }
                 } else {
-                    setFont(new Font("Times New Roman", Font.PLAIN, 13));
+                    setFont(new Font("Arial", Font.PLAIN, 17));
                 }
                 return this;
             }
@@ -1105,7 +1111,7 @@ private JLabel makeBadge(String text, Color color) {
         legend.setBorder(BorderFactory.createMatteBorder(
             1, 0, 0, 0, new Color(220, 220, 220)));
         legend.add(new JLabel("Legend:") {{
-            setFont(new Font("Times New Roman", Font.BOLD, 11));
+            setFont(new Font("Arial", Font.BOLD, 15));
             setForeground(Color.GRAY);
         }});
         legend.add(makeBadge("COMPLETED = Consultation done",   new Color(52, 152, 219)));
@@ -1136,10 +1142,10 @@ private JLabel makeBadge(String text, Color color) {
             doctorOptions[i] = d[1] + " — " + d[2];
         }
         JComboBox<String> doctorDropdown = new JComboBox<>(doctorOptions);
-        doctorDropdown.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        doctorDropdown.setFont(new Font("Arial", Font.PLAIN, 17));
         JPanel selectPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         selectPanel.add(new JLabel("Select Doctor:") {{
-            setFont(new Font("Times New Roman", Font.BOLD, 13));
+            setFont(new Font("Arial", Font.BOLD, 17));
         }});
         selectPanel.add(doctorDropdown);
 
@@ -1167,10 +1173,10 @@ private JLabel makeBadge(String text, Color color) {
         JPanel headerLeft = new JPanel(new GridLayout(2, 1));
         headerLeft.setBackground(new Color(41, 128, 185));
         JLabel nameLabel = new JLabel(doctorName);
-        nameLabel.setFont(new Font("Times New Roman", Font.BOLD, 18));
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 22));
         nameLabel.setForeground(Color.WHITE);
         JLabel specLabel = new JLabel(doctorSpec);
-        specLabel.setFont(new Font("Times New Roman", Font.ITALIC, 13));
+        specLabel.setFont(new Font("Arial", Font.ITALIC, 17));
         specLabel.setForeground(new Color(200, 230, 255));
         headerLeft.add(nameLabel);
         headerLeft.add(specLabel);
@@ -1182,7 +1188,7 @@ private JLabel makeBadge(String text, Color color) {
         JButton prevBtn = makeNavBtn("< Prev Week");
         JButton nextBtn = makeNavBtn("Next Week >");
         JLabel weekLabel = new JLabel("", SwingConstants.CENTER);
-        weekLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        weekLabel.setFont(new Font("Arial", Font.BOLD, 17));
         weekLabel.setForeground(Color.WHITE);
         weekNav.add(prevBtn);
         weekNav.add(weekLabel);
@@ -1195,7 +1201,7 @@ private JLabel makeBadge(String text, Color color) {
         legendBar.setBackground(new Color(245, 247, 250));
         legendBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
         legendBar.add(new JLabel("Click any available slot to book instantly") {{
-            setFont(new Font("Times New Roman", Font.ITALIC, 12));
+            setFont(new Font("Arial", Font.ITALIC, 16));
             setForeground(new Color(100, 100, 100));
         }});
         legendBar.add(Box.createHorizontalStrut(20));
@@ -1253,10 +1259,10 @@ private JLabel makeBadge(String text, Color color) {
                     dayHeader.setBackground(new Color(52, 73, 94));
                     dayHeader.setBorder(BorderFactory.createEmptyBorder(6, 0, 6, 0));
                     JLabel dayNameLbl = new JLabel(dayNames[d], SwingConstants.CENTER);
-                    dayNameLbl.setFont(new Font("Times New Roman", Font.BOLD, 13));
+                    dayNameLbl.setFont(new Font("Arial", Font.BOLD, 17));
                     dayNameLbl.setForeground(Color.WHITE);
                     JLabel dateLbl = new JLabel(dispDates[d], SwingConstants.CENTER);
-                    dateLbl.setFont(new Font("Times New Roman", Font.PLAIN, 11));
+                    dateLbl.setFont(new Font("Arial", Font.PLAIN, 15));
                     dateLbl.setForeground(new Color(180, 200, 220));
                     dayHeader.add(dayNameLbl);
                     dayHeader.add(dateLbl);
@@ -1273,7 +1279,7 @@ private JLabel makeBadge(String text, Color color) {
                             if (available.contains(slot)) {
                                 // Available — clickable green chip
                                 JButton slotChip = new JButton(slot);
-                                slotChip.setFont(new Font("Times New Roman", Font.BOLD, 12));
+                                slotChip.setFont(new Font("Arial", Font.BOLD, 16));
                                 slotChip.setBackground(new Color(39, 174, 96));
                                 slotChip.setForeground(Color.WHITE);
                                 slotChip.setFocusPainted(false);
@@ -1328,7 +1334,7 @@ private JLabel makeBadge(String text, Color color) {
                             } else {
                                 // Unavailable — grey label
                                 JLabel greySlot = new JLabel(slot, SwingConstants.CENTER);
-                                greySlot.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+                                greySlot.setFont(new Font("Arial", Font.PLAIN, 16));
                                 greySlot.setForeground(new Color(180, 180, 180));
                                 greySlot.setOpaque(true);
                                 greySlot.setBackground(new Color(245, 245, 245));
@@ -1368,7 +1374,7 @@ private JLabel makeBadge(String text, Color color) {
         footer.setBackground(new Color(245, 247, 250));
         footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)));
         JButton closeBtn = new JButton("Close");
-        closeBtn.setFont(new Font("Times New Roman", Font.BOLD, 12));
+        closeBtn.setFont(new Font("Arial", Font.BOLD, 16));
         closeBtn.setBackground(new Color(52, 73, 94));
         closeBtn.setForeground(Color.WHITE);
         closeBtn.setFocusPainted(false);
@@ -1393,7 +1399,7 @@ private JLabel makeBadge(String text, Color color) {
 // ── HELPER METHODS ──
 private JButton makeNavBtn(String text) {
     JButton btn = new JButton(text);
-    btn.setFont(new Font("Times New Roman", Font.BOLD, 11));
+    btn.setFont(new Font("Arial", Font.BOLD, 15));
     btn.setBackground(new Color(31, 97, 141));   // ← solid dark blue instead of transparent
     btn.setForeground(Color.WHITE);
     btn.setFocusPainted(false);
@@ -1406,7 +1412,7 @@ private JButton makeNavBtn(String text) {
 
 private JLabel makeLegendChip(String text, Color fg, Color bg) {
     JLabel chip = new JLabel("  " + text + "  ");
-    chip.setFont(new Font("Times New Roman", Font.BOLD, 11));
+    chip.setFont(new Font("Arial", Font.BOLD, 15));
     chip.setForeground(fg);
     chip.setBackground(bg);
     chip.setOpaque(true);
@@ -1454,10 +1460,10 @@ private JLabel makeLegendChip(String text, Color fg, Color bg) {
         JPanel headerText = new JPanel(new GridLayout(2, 1));
         headerText.setBackground(new Color(41, 128, 185));
         JLabel title = new JLabel("Patient Profile");
-        title.setFont(new Font("Times New Roman", Font.BOLD, 20));
+        title.setFont(new Font("Arial", Font.BOLD, 24));
         title.setForeground(Color.WHITE);
         JLabel subtitle = new JLabel("Your personal account information");
-        subtitle.setFont(new Font("Times New Roman", Font.ITALIC, 12));
+        subtitle.setFont(new Font("Arial", Font.ITALIC, 16));
         subtitle.setForeground(new Color(200, 230, 255));
         headerText.add(title);
         headerText.add(subtitle);
@@ -1474,7 +1480,7 @@ private JLabel makeLegendChip(String text, Color fg, Color bg) {
                 g2.setColor(new Color(255, 255, 255, 60));
                 g2.fillOval(5, 5, 50, 50);
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Times New Roman", Font.BOLD, 22));
+                g2.setFont(new Font("Arial", Font.BOLD, 26));
                 FontMetrics fm = g2.getFontMetrics();
                 String initial = profile[0].substring(0, 1).toUpperCase();
                 int x = 5 + (50 - fm.stringWidth(initial)) / 2;
@@ -1537,11 +1543,11 @@ private JLabel makeLegendChip(String text, Color fg, Color bg) {
         textPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
         JLabel labelLbl = new JLabel(label.toUpperCase());
-        labelLbl.setFont(new Font("Times New Roman", Font.PLAIN, 10));
+        labelLbl.setFont(new Font("Arial", Font.PLAIN, 14));
         labelLbl.setForeground(new Color(150, 150, 150));
 
         JLabel valueLbl = new JLabel(value);
-        valueLbl.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        valueLbl.setFont(new Font("Arial", Font.BOLD, 18));
         valueLbl.setForeground(new Color(44, 62, 80));
 
         textPanel.add(labelLbl);

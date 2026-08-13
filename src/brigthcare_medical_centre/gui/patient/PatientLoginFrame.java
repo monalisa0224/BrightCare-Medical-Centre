@@ -35,7 +35,10 @@ public class PatientLoginFrame extends JFrame {
 
     private void buildUI() {
         setTitle("BrightCare Medical Centre - Patient Login");
-        setSize(420, 620);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int frameWidth = Math.max(420, (int) (screenSize.width * 0.28));
+        int frameHeight = Math.max(620, (int) (screenSize.height * 0.65));
+        setSize(frameWidth, frameHeight);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(41, 128, 185));
@@ -46,15 +49,15 @@ public class PatientLoginFrame extends JFrame {
         brandPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 15, 30));
 
         JLabel hospitalName = new JLabel("BrightCare", SwingConstants.CENTER);
-        hospitalName.setFont(new Font("Times New Roman", Font.BOLD, 34));
+        hospitalName.setFont(new Font("Arial", Font.BOLD, 38));
         hospitalName.setForeground(Color.WHITE);
 
         JLabel hospitalSub = new JLabel("Medical Centre", SwingConstants.CENTER);
-        hospitalSub.setFont(new Font("Times New Roman", Font.PLAIN, 16));
+        hospitalSub.setFont(new Font("Arial", Font.PLAIN, 20));
         hospitalSub.setForeground(new Color(200, 230, 255));
 
         JLabel tagline = new JLabel("Patient Portal", SwingConstants.CENTER);
-        tagline.setFont(new Font("Times New Roman", Font.ITALIC, 13));
+        tagline.setFont(new Font("Arial", Font.ITALIC, 17));
         tagline.setForeground(new Color(180, 215, 255));
 
         brandPanel.add(hospitalName);
@@ -73,11 +76,11 @@ public class PatientLoginFrame extends JFrame {
         cardHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
         JLabel loginTitle = new JLabel("Welcome Back");
-        loginTitle.setFont(new Font("Times New Roman", Font.BOLD, 22));
+        loginTitle.setFont(new Font("Arial", Font.BOLD, 26));
         loginTitle.setForeground(new Color(44, 62, 80));
 
         JLabel loginSub = new JLabel("Sign in to your patient account");
-        loginSub.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+        loginSub.setFont(new Font("Arial", Font.PLAIN, 16));
         loginSub.setForeground(new Color(150, 150, 150));
 
         cardHeader.add(loginTitle);
@@ -91,12 +94,12 @@ public class PatientLoginFrame extends JFrame {
 
         // Username field
         JLabel usernameLabel = new JLabel("Username / IC");
-        usernameLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        usernameLabel.setFont(new Font("Arial", Font.BOLD, 17));
         usernameLabel.setForeground(new Color(44, 62, 80));
         usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         usernameField = new JTextField();
-        usernameField.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        usernameField.setFont(new Font("Arial", Font.PLAIN, 17));
         usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
         usernameField.setBorder(BorderFactory.createCompoundBorder(
@@ -106,12 +109,12 @@ public class PatientLoginFrame extends JFrame {
 
         // Password field
         JLabel passwordLabel = new JLabel("Password");
-        passwordLabel.setFont(new Font("Times New Roman", Font.BOLD, 13));
+        passwordLabel.setFont(new Font("Arial", Font.BOLD, 17));
         passwordLabel.setForeground(new Color(44, 62, 80));
         passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         passwordField = new JPasswordField();
-        passwordField.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+        passwordField.setFont(new Font("Arial", Font.PLAIN, 17));
         passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordField.setBorder(BorderFactory.createCompoundBorder(
@@ -121,7 +124,7 @@ public class PatientLoginFrame extends JFrame {
 
         // Login button
         JButton loginBtn = new JButton("Sign In");
-        loginBtn.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        loginBtn.setFont(new Font("Arial", Font.BOLD, 18));
         loginBtn.setBackground(new Color(41, 128, 185));
         loginBtn.setForeground(Color.WHITE);
         loginBtn.setFocusPainted(false);
@@ -165,7 +168,7 @@ public class PatientLoginFrame extends JFrame {
         notePanel.setBackground(Color.WHITE);
         notePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         JLabel noteLabel = new JLabel("Contact reception if you need help accessing your account.");
-        noteLabel.setFont(new Font("Times New Roman", Font.ITALIC, 11));
+        noteLabel.setFont(new Font("Arial", Font.ITALIC, 15));
         noteLabel.setForeground(new Color(180, 180, 180));
         notePanel.add(noteLabel);
         card.add(notePanel, BorderLayout.SOUTH);
@@ -222,6 +225,11 @@ public class PatientLoginFrame extends JFrame {
     }
 
     public static void main(String[] args) {
+        // Make all JOptionPane dialogs (message/confirm/input) use a larger font
+        // app-wide for the patient module, instead of Swing's default small font.
+        UIManager.put("OptionPane.messageFont", new Font("Arial", Font.PLAIN, 16));
+        UIManager.put("OptionPane.buttonFont", new Font("Arial", Font.PLAIN, 15));
+        UIManager.put("Button.font", new Font("Arial", Font.PLAIN, 15));
         SwingUtilities.invokeLater(() -> new PatientLoginFrame());
     }
 
