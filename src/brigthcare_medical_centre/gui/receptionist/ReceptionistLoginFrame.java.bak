@@ -28,18 +28,15 @@ public class ReceptionistLoginFrame extends JFrame {
 
     private void connectToServer() {
         try {
-            Registry registry;
-            if (Constants.SSL_ENABLED) {
-                System.setProperty("javax.net.ssl.trustStore", "clienttrust.jks");
-                System.setProperty("javax.net.ssl.trustStorePassword", "brightcare123");
-                SslUtil.validateClientSSL();
-                registry = LocateRegistry.getRegistry(
-                        Constants.RMI_HOST,
-                        Constants.RECEPTIONIST_RMI_PORT,
-                        SslUtil.clientSocketFactory());
-            } else {
-                registry = LocateRegistry.getRegistry(Constants.RMI_HOST, Constants.RMI_PORT);
-            }
+            System.setProperty("javax.net.ssl.trustStore", "clienttrust.jks");
+            System.setProperty("javax.net.ssl.trustStorePassword", "brightcare123");
+
+            SslUtil.validateClientSSL();
+        
+            Registry registry = LocateRegistry.getRegistry(
+                    Constants.RMI_HOST,
+                    Constants.RECEPTIONIST_RMI_PORT,
+                    SslUtil.clientSocketFactory());
             authService = (AuthenticationInterface) registry.lookup(Constants.AUTH_SERVICE);
             
             receptionistService = (ReceptionistInterface) registry.lookup(Constants.RECEPTIONIST_SERVICE);

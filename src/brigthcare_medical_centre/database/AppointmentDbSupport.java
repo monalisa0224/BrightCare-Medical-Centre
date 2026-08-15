@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import brigthcare_medical_centre.util.Constants;
 
 final class AppointmentDbSupport {
 
@@ -96,6 +97,14 @@ final class AppointmentDbSupport {
             ps.setString(3, time);
             ps.setBoolean(4, isAvailable);
             ps.executeUpdate();
+        }
+    }
+
+    static void ensureDefaultSlots(Connection conn, int doctorId, String date) throws SQLException {
+        for (String slot : Constants.DEFAULT_SLOTS) {
+            if (!slotExists(conn, doctorId, date, slot)) {
+                insertSlotAvailability(conn, doctorId, date, slot, true);
+            }
         }
     }
 }

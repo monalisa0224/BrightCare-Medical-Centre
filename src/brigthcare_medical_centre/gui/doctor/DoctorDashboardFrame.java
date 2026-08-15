@@ -23,7 +23,6 @@ public class DoctorDashboardFrame extends JFrame {
 
     private static final Color TEAL = new Color(0, 102, 102);
     private static final Color LIGHT_TEAL = new Color(224, 242, 241);
-    private static final String[] DEFAULT_SLOTS = {"09:00", "10:00", "11:00", "13:00", "14:00"};
 
     public DoctorDashboardFrame(int doctorId, String doctorName, String username) {
         this.doctorId = doctorId;
@@ -382,7 +381,7 @@ public class DoctorDashboardFrame extends JFrame {
         String currentTime = table.getValueAt(row, 3).toString();
 
         JTextField dateField = new JTextField(currentDate);
-        JComboBox<String> timeCombo = new JComboBox<>(DEFAULT_SLOTS);
+        JComboBox<String> timeCombo = new JComboBox<>(Constants.DEFAULT_SLOTS);
         timeCombo.setSelectedItem(currentTime);
         JPanel form = new JPanel(new GridLayout(2, 2, 8, 8));
         form.add(new JLabel("New Date (yyyy-MM-dd):"));
@@ -419,10 +418,7 @@ public class DoctorDashboardFrame extends JFrame {
         JPanel selectPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         JButton loadBtn = new JButton("Load Appointments");
         loadBtn.setFont(new Font("Arial", Font.PLAIN, 13));
-        JButton viewNotesBtn = new JButton("View Existing Notes");
-        viewNotesBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         selectPanel.add(loadBtn);
-        selectPanel.add(viewNotesBtn);
 
         JComboBox<String> apptCombo = new JComboBox<>();
         apptCombo.setPreferredSize(new Dimension(450, 28));
@@ -505,30 +501,6 @@ public class DoctorDashboardFrame extends JFrame {
             }
         });
 
-        viewNotesBtn.addActionListener(e -> {
-            if (apptCombo.getItemCount() == 0 || apptCombo.getSelectedItem() == null) return;
-            String sel = apptCombo.getSelectedItem().toString().trim();
-            if (sel.equals("No accepted/completed appointments")) return;
-            int apptId = Integer.parseInt(sel.split(" \\| ")[0].trim());
-            try {
-                String[] note = doctorService.getConsultationNotes(apptId);
-                if (note != null) {
-                    diagnosisArea.setText(note[4]);
-                    treatmentArea.setText(note[5]);
-                    prescriptionArea.setText(note[6]);
-                    notesArea.setText(note[7]);
-                } else {
-                    JOptionPane.showMessageDialog(this, "No notes found for this appointment.");
-                    diagnosisArea.setText("");
-                    treatmentArea.setText("");
-                    prescriptionArea.setText("");
-                    notesArea.setText("");
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
-            }
-        });
-
         saveBtn.addActionListener(e -> {
             if (apptCombo.getItemCount() == 0 || apptCombo.getSelectedItem() == null) return;
             String sel = apptCombo.getSelectedItem().toString().trim();
@@ -596,7 +568,7 @@ public class DoctorDashboardFrame extends JFrame {
                 scheduleGrid.setLayout(new GridLayout(6, 6, 3, 3));
 
                 scheduleGrid.add(new JLabel("Day / Time", SwingConstants.CENTER));
-                for (String slot : DEFAULT_SLOTS) {
+                for (String slot : Constants.DEFAULT_SLOTS) {
                     JLabel hl = new JLabel(slot, SwingConstants.CENTER);
                     hl.setFont(new Font("Arial", Font.BOLD, 11));
                     scheduleGrid.add(hl);
@@ -617,8 +589,8 @@ public class DoctorDashboardFrame extends JFrame {
                     dayLabel.setFont(new Font("Arial", Font.BOLD, 11));
                     scheduleGrid.add(dayLabel);
 
-                    for (int si = 0; si < DEFAULT_SLOTS.length; si++) {
-                        final String fSlot = DEFAULT_SLOTS[si];
+                    for (int si = 0; si < Constants.DEFAULT_SLOTS.length; si++) {
+                        final String fSlot = Constants.DEFAULT_SLOTS[si];
                         final String fDateStr = dateStr;
 
                         boolean found = false;
@@ -711,10 +683,16 @@ public class DoctorDashboardFrame extends JFrame {
         loadPatientsBtn.setFont(new Font("Arial", Font.PLAIN, 13));
         JButton searchBtn = new JButton("Search History");
         searchBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+        JButton viewNotesBtn = new JButton("View Notes");
+        viewNotesBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+        viewNotesBtn.setBackground(TEAL);
+        viewNotesBtn.setForeground(Color.WHITE);
+        viewNotesBtn.setFocusPainted(false);
         searchPanel.add(new JLabel("Select Patient:"));
         searchPanel.add(patientCombo);
         searchPanel.add(loadPatientsBtn);
         searchPanel.add(searchBtn);
+        searchPanel.add(viewNotesBtn);
 
         panel.add(searchPanel, BorderLayout.NORTH);
 
@@ -739,6 +717,8 @@ public class DoctorDashboardFrame extends JFrame {
         });
 
         searchBtn.addActionListener(e -> searchPatientHistory(table, patientCombo));
+
+        viewNotesBtn.addActionListener(e -> viewPatientNotes(patientCombo));
 
         patientCombo.addActionListener(e -> {
             if (patientCombo.getSelectedItem() != null
@@ -769,6 +749,43 @@ public class DoctorDashboardFrame extends JFrame {
             if (history.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "No history found for this patient.");
             }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void viewPatientNotes(JComboBox<String> patientCombo) {
+        if (patientCombo.getItemCount() == 0 || patientCombo.getSelectedItem() == null) return;
+        String patientUser = patientCombo.getSelectedItem().toString().trim();
+        if (patientUser.isEmpty() || patientUser.equals("No previous patients")) {
+            JOptionPane.showMessageDialog(this, "Please select a valid patient.");
+            return;
+        }
+        try {
+            List<String[]> notes = doctorService.getConsultationNotesByPatient(patientUser);
+            if (notes.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No consultation notes found for this patient.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (String[] n : notes) {
+                sb.append("=== Consultation Notes (Note ").append(n[0]).append(") ===\n");
+                sb.append("Appointment ID : ").append(n[1]).append("\n");
+                sb.append("Appt Date/Time : ").append(n[2]).append(" ").append(n[3]).append("\n");
+                sb.append("Diagnosis      : ").append(n[5] != null ? n[5] : "N/A").append("\n");
+                sb.append("Treatment      : ").append(n[6] != null ? n[6] : "N/A").append("\n");
+                sb.append("Prescription   : ").append(n[7] != null ? n[7] : "N/A").append("\n");
+                sb.append("Notes          : ").append(n[8] != null ? n[8] : "N/A").append("\n\n");
+            }
+
+            JTextArea area = new JTextArea(sb.toString());
+            area.setEditable(false);
+            area.setFont(new Font("Arial", Font.PLAIN, 13));
+            JScrollPane sp = new JScrollPane(area);
+            sp.setPreferredSize(new Dimension(560, 420));
+            JOptionPane.showMessageDialog(this, sp,
+                    "Consultation Notes - " + patientUser, JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }

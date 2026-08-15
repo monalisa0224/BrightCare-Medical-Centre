@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -370,6 +372,38 @@ public class DoctorDB {
         return list;
     }
 
+    public List<String[]> getConsultationNotesByPatient(String patientUsername) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT cn.NoteID, a.AppointmentID, a.ApptDate, a.ApptTime, "
+                   + "cn.ConsultationDate, cn.Diagnosis, cn.Treatment, cn.Prescription, cn.Notes "
+                   + "FROM CONSULTATION_NOTES cn "
+                   + "JOIN APPOINTMENTS a ON cn.AppointmentID = a.AppointmentID "
+                   + "WHERE cn.PatientUsername = ? "
+                   + "ORDER BY cn.ConsultationDate DESC, a.ApptDate DESC, a.ApptTime DESC";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientUsername);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new String[]{
+                    String.valueOf(rs.getInt("NoteID")),
+                    String.valueOf(rs.getInt("AppointmentID")),
+                    rs.getString("ApptDate"),
+                    rs.getString("ApptTime"),
+                    rs.getString("ConsultationDate"),
+                    rs.getString("Diagnosis"),
+                    rs.getString("Treatment"),
+                    rs.getString("Prescription"),
+                    rs.getString("Notes")
+                });
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public List<String[]> getDistinctPatientsForDoctor(int doctorId) {
         List<String[]> list = new ArrayList<>();
         String sql = "SELECT DISTINCT a.Username FROM APPOINTMENTS a "
@@ -396,23 +430,40 @@ public class DoctorDB {
                    + "FROM DOCTOR_SCHEDULE "
                    + "WHERE DoctorID = ? AND ScheduleDate >= ? "
                    + "ORDER BY ScheduleDate, TimeSlot";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, doctorId);
-            ps.setString(2, weekStartDate);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new String[]{
-                    rs.getString("ScheduleDate"),
-                    rs.getString("TimeSlot"),
-                    String.valueOf(rs.getBoolean("IsAvailable"))
-                });
+        try (Connection conn = getConnection()) {
+            ensureDefaultWeek(conn, doctorId, weekStartDate);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, doctorId);
+                ps.setString(2, weekStartDate);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    list.add(new String[]{
+                        rs.getString("ScheduleDate"),
+                        rs.getString("TimeSlot"),
+                        String.valueOf(rs.getBoolean("IsAvailable"))
+                    });
+                }
+                rs.close();
             }
-            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
+    }
+
+    private void ensureDefaultWeek(Connection conn, int doctorId, String weekStartDate)
+            throws SQLException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance();
+        try {
+            cal.setTime(sdf.parse(weekStartDate));
+        } catch (ParseException e) {
+            return;
+        }
+        for (int d = 0; d < 5; d++) {
+            AppointmentDbSupport.ensureDefaultSlots(conn, doctorId, sdf.format(cal.getTime()));
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
     }
 
     public boolean updateDoctorSchedule(int doctorId, String date, String slot, boolean isAvailable) {
@@ -437,15 +488,17 @@ public class DoctorDB {
         List<String> slots = new ArrayList<>();
         String sql = "SELECT TimeSlot FROM DOCTOR_SCHEDULE "
                    + "WHERE DoctorID = ? AND ScheduleDate = ? AND IsAvailable = true";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, doctorId);
-            ps.setString(2, date);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                slots.add(rs.getString("TimeSlot"));
+        try (Connection conn = getConnection()) {
+            AppointmentDbSupport.ensureDefaultSlots(conn, doctorId, date);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, doctorId);
+                ps.setString(2, date);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    slots.add(rs.getString("TimeSlot"));
+                }
+                rs.close();
             }
-            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }

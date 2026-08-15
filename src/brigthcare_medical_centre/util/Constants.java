@@ -17,5 +17,6 @@ public class Constants {
     public static final String PATIENT_SERVICE = "PatientService";
     public static final String DOCTOR_SERVICE = "DoctorService";
     public static final String RECEPTIONIST_SERVICE = "ReceptionistService";
-    
+    public static final String[] DEFAULT_SLOTS = {"09:00", "10:00", "11:00", "13:00", "14:00"};
+
 }

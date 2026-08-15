@@ -6,9 +6,7 @@ import java.sql.SQLException;
 import brigthcare_medical_centre.util.Constants;
 
 public class DerbyConnection {
-
     private static volatile boolean driverLoaded;
-    private static final boolean NETWORK_MODE = Constants.DB_URL.startsWith("jdbc:derby://");
 
     public static Connection getConnection() throws SQLException {
         ensureDriverLoaded();
@@ -18,14 +16,7 @@ public class DerbyConnection {
     private static synchronized void ensureDriverLoaded() throws SQLException {
         if (!driverLoaded) {
             try {
-                if (NETWORK_MODE) {
-                    // Remote Derby database (3-tier setup): the database runs on
-                    // its own host and we reach it with the network client driver.
-                    Class.forName("org.apache.derby.client.ClientAutoloadedDriver");
-                } else {
-                    // Embedded Derby database (2-tier / single machine default).
-                    Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-                }
+                Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
                 driverLoaded = true;
             } catch (ClassNotFoundException e) {
                 throw new SQLException("Derby driver not found: " + e.getMessage());
