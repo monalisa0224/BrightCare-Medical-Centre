@@ -11,9 +11,14 @@ public class DerbyConnection {
 public static synchronized Connection getConnection() throws SQLException {
     if (connection == null || connection.isClosed()) {
         try {
-            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+            String dbUrl = Constants.DB_URL;
+            if (dbUrl != null && dbUrl.startsWith("jdbc:derby://")) {
+                Class.forName("org.apache.derby.jdbc.ClientDriver");   // network DB
+            } else {
+                Class.forName("org.apache.derby.jdbc.EmbeddedDriver"); // local embedded DB
+            }
         } catch (ClassNotFoundException e) {
-            throw new SQLException("Derby driver not found: " + e.getMessage());
+            throw new SQLException("Derby driver not found: " + e.getMessage(), e);
         }
         connection = DriverManager.getConnection(Constants.DB_URL);
     }

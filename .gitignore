@@ -5,6 +5,7 @@ dist/
 *.jar
 BrightCareDB/
 derby.log
+org/
 nbproject/private/
 .opencode/plans/
 /dist/

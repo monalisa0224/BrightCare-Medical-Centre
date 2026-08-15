@@ -13,12 +13,12 @@ rem  In plain (non-SSL) demo mode the receptionist connects to the same
 rem  plain RMI registry (port 1099) as the other roles.
 rem ============================================================
 
-set RMI_SERVER_IP=192.168.1.101
+set RMI_SERVER_IP=192.168.100.103
 set CLASSES=build\classes
 
 if not exist "%CLASSES%" (
     echo Please build the project on the server machine first, then copy
-    echo the build\classes folder here. (start_server_demo.bat builds it.)
+    echo the build\classes folder here. Check start_server_demo.bat.
     pause
     exit /b 1
 )

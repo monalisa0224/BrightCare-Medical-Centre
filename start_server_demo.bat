@@ -12,8 +12,8 @@ rem    DB_SERVER_IP  -> IP of the machine running start_db_server_demo.bat
 rem    RMI_SERVER_IP -> IP of THIS machine (must be reachable by clients)
 rem ============================================================
 
-set DB_SERVER_IP=192.168.1.100
-set RMI_SERVER_IP=192.168.1.101
+set DB_SERVER_IP=192.168.100.45
+set RMI_SERVER_IP=192.168.100.103
 
 set CLASSES=build\classes
 rem Derby client driver + shared libs used to reach the remote database tier.
