@@ -4,6 +4,8 @@ dist/
 *.txt
 *.jar
 BrightCareDB/
+BrightCareDB_Test*/
+BrightCareDB_TestInt*/
 derby.log
 org/
 nbproject/private/

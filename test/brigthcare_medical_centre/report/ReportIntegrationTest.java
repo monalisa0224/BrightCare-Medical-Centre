@@ -2,6 +2,7 @@ package brigthcare_medical_centre.report;
 
 import brigthcare_medical_centre.common.ReportInterface;
 import brigthcare_medical_centre.report.ReportType;
+import brigthcare_medical_centre.tests.TestRmiServer;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -11,28 +12,31 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Integration tests for Report module using actual RMI server
- * Requires RMI server running on localhost:1099
+ * Integration tests for Report module using an in-process RMI server.
+ * The server and its temporary database are started automatically in
+ * {@code setUpClass}, so no external startup is required.
  */
 public class ReportIntegrationTest {
 
     private static ReportInterface reportService;
-    private static final String RMI_URL = "rmi://localhost:1099/";
+    private static final String RMI_URL = TestRmiServer.RMI_URL;
 
     @BeforeClass
     public static void setUpClass() {
         try {
+            TestRmiServer.ensureStarted();
             ReportInterface report = (ReportInterface) Naming.lookup(RMI_URL + "ReportService");
             reportService = report;
             System.out.println("Connected to ReportService on " + RMI_URL + "ReportService");
         } catch (Exception e) {
-            System.err.println("Could not connect to RMI server. Make sure start_server.bat is running.");
+            System.err.println("Could not connect to the test RMI server.");
             e.printStackTrace();
         }
     }
 
     @AfterClass
     public static void tearDownClass() {
+        TestRmiServer.stop();
     }
 
     @Test

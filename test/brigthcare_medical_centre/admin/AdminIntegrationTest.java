@@ -1,9 +1,8 @@
 package brigthcare_medical_centre.admin;
 
-import brigthcare_medical_centre.auth.User;
 import brigthcare_medical_centre.auth.UserRole;
 import brigthcare_medical_centre.common.AdminInterface;
-import brigthcare_medical_centre.server.RmiServer;
+import brigthcare_medical_centre.tests.TestRmiServer;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -15,34 +14,31 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Integration tests for Admin module using actual RMI server
- * These tests require the RMI server to be running on localhost:1099
- * 
- * Run with: start_server.bat first, then run these tests
+ * Integration tests for Admin module using an in-process RMI server.
+ * The server and its temporary database are started automatically in
+ * {@code setUpClass}, so no external startup is required.
  */
 public class AdminIntegrationTest {
 
-    private static RmiServer rmiServer;
     private static AdminInterface adminService;
-    private static final String RMI_URL = "rmi://localhost:1099/";
+    private static final String RMI_URL = TestRmiServer.RMI_URL;
 
     @BeforeClass
     public static void setUpClass() {
-        // Server should be started externally before running tests
-        // Use start_server.bat before running these tests
         try {
+            TestRmiServer.ensureStarted();
             AdminInterface admin = (AdminInterface) Naming.lookup(RMI_URL + "AdminService");
             adminService = admin;
             System.out.println("Connected to AdminService on " + RMI_URL + "AdminService");
         } catch (Exception e) {
-            System.err.println("Could not connect to RMI server. Make sure start_server.bat is running.");
+            System.err.println("Could not connect to the test RMI server.");
             e.printStackTrace();
         }
     }
 
     @AfterClass
     public static void tearDownClass() {
-        // Cleanup if needed
+        TestRmiServer.stop();
     }
 
     @Before

@@ -9,7 +9,7 @@ if not exist "%CLASSES%" mkdir "%CLASSES%"
 echo Compiling all source files...
 set FILES=
 for /r %SRCDIR% %%f in (*.java) do set FILES=!FILES! "%%f"
-javac -cp "%LIBS%" -d "%CLASSES%" !FILES!
+javac -source 1.8 -target 1.8 -cp "%LIBS%" -d "%CLASSES%" !FILES!
 
 if %errorlevel% equ 0 (
     echo Build successful.

@@ -675,66 +675,83 @@ public class DoctorDashboardFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        JComboBox<String> patientCombo = new JComboBox<>();
-        patientCombo.setPreferredSize(new Dimension(200, 28));
-        patientCombo.setFont(new Font("Arial", Font.PLAIN, 13));
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         JButton loadPatientsBtn = new JButton("Load Patients");
         loadPatientsBtn.setFont(new Font("Arial", Font.PLAIN, 13));
-        JButton searchBtn = new JButton("Search History");
-        searchBtn.setFont(new Font("Arial", Font.PLAIN, 13));
-        JButton viewNotesBtn = new JButton("View Notes");
-        viewNotesBtn.setFont(new Font("Arial", Font.PLAIN, 13));
-        viewNotesBtn.setBackground(TEAL);
-        viewNotesBtn.setForeground(Color.WHITE);
-        viewNotesBtn.setFocusPainted(false);
-        searchPanel.add(new JLabel("Select Patient:"));
-        searchPanel.add(patientCombo);
-        searchPanel.add(loadPatientsBtn);
-        searchPanel.add(searchBtn);
-        searchPanel.add(viewNotesBtn);
+        JButton viewConsultBtn = new JButton("View Consultation");
+        viewConsultBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        viewConsultBtn.setBackground(TEAL);
+        viewConsultBtn.setForeground(Color.WHITE);
+        viewConsultBtn.setFocusPainted(false);
+        controlPanel.add(loadPatientsBtn);
+        controlPanel.add(viewConsultBtn);
+        panel.add(controlPanel, BorderLayout.NORTH);
 
-        panel.add(searchPanel, BorderLayout.NORTH);
+        JTable patientTable = new JTable(new DefaultTableModel(
+                new Object[]{"Patient", "Consultations", "Last Visit"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+        patientTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        patientTable.setRowHeight(28);
+        patientTable.setFont(new Font("Arial", Font.PLAIN, 13));
+        patientTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        patientTable.getColumnModel().getColumn(0).setPreferredWidth(180);
+        patientTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        patientTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        JScrollPane patientScroll = new JScrollPane(patientTable);
+        patientScroll.setBorder(BorderFactory.createTitledBorder("Patients (select one)"));
 
-        JTable table = new JTable();
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(BorderFactory.createTitledBorder("Patient Medical History"));
-        panel.add(scroll, BorderLayout.CENTER);
+        JTable historyTable = new JTable();
+        historyTable.setRowHeight(28);
+        JScrollPane historyScroll = new JScrollPane(historyTable);
+        historyScroll.setBorder(BorderFactory.createTitledBorder("Patient Medical History"));
 
-        loadPatientsBtn.addActionListener(e -> {
-            try {
-                List<String[]> patients = doctorService.getDistinctPatientsForDoctor(doctorId);
-                patientCombo.removeAllItems();
-                for (String[] p : patients) {
-                    patientCombo.addItem(p[0]);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                patientScroll, historyScroll);
+        splitPane.setResizeWeight(0.35);
+        splitPane.setDividerLocation(350);
+        panel.add(splitPane, BorderLayout.CENTER);
+
+        loadPatientsBtn.addActionListener(e -> loadPatientsTable(patientTable));
+
+        patientTable.getSelectionModel().addListSelectionListener(ev -> {
+            if (ev.getValueIsAdjusting()) return;
+            int row = patientTable.getSelectedRow();
+            if (row >= 0) {
+                Object val = patientTable.getValueAt(row, 0);
+                if (val != null && !val.toString().equals("No previous patients")) {
+                    fillHistoryForPatient(val.toString(), historyTable);
                 }
-                if (patientCombo.getItemCount() == 0) {
-                    patientCombo.addItem("No previous patients");
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             }
         });
 
-        searchBtn.addActionListener(e -> searchPatientHistory(table, patientCombo));
-
-        viewNotesBtn.addActionListener(e -> viewPatientNotes(patientCombo));
-
-        patientCombo.addActionListener(e -> {
-            if (patientCombo.getSelectedItem() != null
-                    && !patientCombo.getSelectedItem().toString().equals("No previous patients")) {
-                searchPatientHistory(table, patientCombo);
+        viewConsultBtn.addActionListener(e -> {
+            int row = patientTable.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a patient from the table first.");
+                return;
             }
+            Object val = patientTable.getValueAt(row, 0);
+            if (val == null || val.toString().isEmpty()
+                    || val.toString().equals("No previous patients")) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a patient from the table first.");
+                return;
+            }
+            showConsultationDialog(val.toString());
         });
 
         return panel;
     }
 
-    private void searchPatientHistory(JTable table, JComboBox<String> patientCombo) {
-        if (patientCombo.getItemCount() == 0 || patientCombo.getSelectedItem() == null) return;
-        String patientUser = patientCombo.getSelectedItem().toString().trim();
-        if (patientUser.isEmpty() || patientUser.equals("No previous patients")) {
-            JOptionPane.showMessageDialog(this, "Please select a valid patient.");
+    private void fillHistoryForPatient(String patientUser, JTable table) {
+        if (patientUser == null || patientUser.isEmpty()
+                || patientUser.equals("No previous patients")) {
+            table.setModel(new DefaultTableModel());
             return;
         }
         try {
@@ -746,46 +763,166 @@ public class DoctorDashboardFrame extends JFrame {
             }
             table.setModel(model);
             applyColorCoding(table, 3);
-            if (history.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No history found for this patient.");
-            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
-    private void viewPatientNotes(JComboBox<String> patientCombo) {
-        if (patientCombo.getItemCount() == 0 || patientCombo.getSelectedItem() == null) return;
-        String patientUser = patientCombo.getSelectedItem().toString().trim();
-        if (patientUser.isEmpty() || patientUser.equals("No previous patients")) {
-            JOptionPane.showMessageDialog(this, "Please select a valid patient.");
-            return;
-        }
+    private void showConsultationDialog(String patientUser) {
         try {
             List<String[]> notes = doctorService.getConsultationNotesByPatient(patientUser);
-            if (notes.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No consultation notes found for this patient.");
+            if (notes == null || notes.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "No consultation notes found for patient: " + patientUser);
                 return;
             }
 
-            StringBuilder sb = new StringBuilder();
+            JDialog dialog = new JDialog(this,
+                    "Consultation Records - " + patientUser, true);
+            dialog.setLayout(new BorderLayout(10, 10));
+
+            JPanel banner = new JPanel(new BorderLayout());
+            banner.setBackground(TEAL);
+            banner.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
+            JLabel header = new JLabel("Consultation Records  -  Patient: " + patientUser
+                    + "   (" + notes.size() + " record" + (notes.size() == 1 ? "" : "s") + ")");
+            header.setFont(new Font("Arial", Font.BOLD, 15));
+            header.setForeground(Color.WHITE);
+            banner.add(header, BorderLayout.WEST);
+            dialog.add(banner, BorderLayout.NORTH);
+
+            String[] columns = {"No.", "Date", "Time", "Diagnosis", "Treatment", "Prescription", "Notes"};
+            DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
+            int seq = 0;
             for (String[] n : notes) {
-                sb.append("=== Consultation Notes (Note ").append(n[0]).append(") ===\n");
-                sb.append("Appointment ID : ").append(n[1]).append("\n");
-                sb.append("Appt Date/Time : ").append(n[2]).append(" ").append(n[3]).append("\n");
-                sb.append("Diagnosis      : ").append(n[5] != null ? n[5] : "N/A").append("\n");
-                sb.append("Treatment      : ").append(n[6] != null ? n[6] : "N/A").append("\n");
-                sb.append("Prescription   : ").append(n[7] != null ? n[7] : "N/A").append("\n");
-                sb.append("Notes          : ").append(n[8] != null ? n[8] : "N/A").append("\n\n");
+                tableModel.addRow(new Object[]{
+                        ++seq,
+                        n[2] != null ? n[2] : "N/A",
+                        n[3] != null ? n[3] : "N/A",
+                        n[5] != null ? n[5] : "N/A",
+                        n[6] != null ? n[6] : "N/A",
+                        n[7] != null ? n[7] : "N/A",
+                        n[8] != null ? n[8] : "N/A"
+                });
             }
 
-            JTextArea area = new JTextArea(sb.toString());
-            area.setEditable(false);
-            area.setFont(new Font("Arial", Font.PLAIN, 13));
-            JScrollPane sp = new JScrollPane(area);
-            sp.setPreferredSize(new Dimension(560, 420));
-            JOptionPane.showMessageDialog(this, sp,
-                    "Consultation Notes - " + patientUser, JOptionPane.INFORMATION_MESSAGE);
+            JTable notesTable = new JTable(tableModel);
+            notesTable.setRowHeight(26);
+            notesTable.setFont(new Font("Arial", Font.PLAIN, 13));
+            notesTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+            notesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            notesTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable tbl, Object value,
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component c = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
+                    if (!isSelected) {
+                        c.setBackground(row % 2 == 0 ? LIGHT_TEAL : Color.WHITE);
+                    }
+                    return c;
+                }
+            });
+            JScrollPane notesScroll = new JScrollPane(notesTable);
+            notesScroll.setPreferredSize(new Dimension(770, 260));
+
+            JTextArea detailArea = new JTextArea(8, 60);
+            detailArea.setEditable(false);
+            detailArea.setFont(new Font("Arial", Font.PLAIN, 13));
+            detailArea.setLineWrap(true);
+            detailArea.setWrapStyleWord(true);
+            detailArea.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+            JScrollPane detailScroll = new JScrollPane(detailArea);
+            detailScroll.setBorder(BorderFactory.createTitledBorder("Selected Consultation"));
+            detailScroll.setPreferredSize(new Dimension(770, 200));
+
+            JPanel content = new JPanel(new BorderLayout(10, 10));
+            content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            content.add(notesScroll, BorderLayout.CENTER);
+            content.add(detailScroll, BorderLayout.SOUTH);
+            dialog.add(content, BorderLayout.CENTER);
+
+            JButton closeBtn = new JButton("Close");
+            closeBtn.setFont(new Font("Arial", Font.BOLD, 13));
+            closeBtn.setBackground(TEAL);
+            closeBtn.setForeground(Color.WHITE);
+            closeBtn.setFocusPainted(false);
+            closeBtn.addActionListener(e -> dialog.dispose());
+
+            JButton refreshBtn = new JButton("Refresh");
+            refreshBtn.setFont(new Font("Arial", Font.PLAIN, 13));
+            refreshBtn.addActionListener(e -> {
+                dialog.dispose();
+                showConsultationDialog(patientUser);
+            });
+
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
+            buttonPanel.add(refreshBtn);
+            buttonPanel.add(closeBtn);
+            dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+            Runnable updateDetail = () -> {
+                int row = notesTable.getSelectedRow();
+                if (row < 0) return;
+                String[] n = notes.get(row);
+                StringBuilder sb = new StringBuilder();
+                sb.append("Record           : #").append(row + 1)
+                        .append("   (Appointment ID: ").append(n[1]).append(")\n");
+                sb.append("Appointment Date : ").append(n[2])
+                        .append("  ").append(n[3] != null ? n[3] : "").append("\n");
+                if (n[4] != null && !n[4].isEmpty()) {
+                    sb.append("Consulted Date   : ").append(n[4]).append("\n");
+                }
+                sb.append("\nDiagnosis     :\n").append(emptyNull(n[5])).append("\n");
+                sb.append("\nTreatment     :\n").append(emptyNull(n[6])).append("\n");
+                sb.append("\nPrescription  :\n").append(emptyNull(n[7])).append("\n");
+                sb.append("\nNotes         :\n").append(emptyNull(n[8])).append("\n");
+                detailArea.setText(sb.toString());
+                detailArea.setCaretPosition(0);
+            };
+
+            notesTable.getSelectionModel().addListSelectionListener(e -> {
+                if (!e.getValueIsAdjusting()) updateDetail.run();
+            });
+            notesTable.getSelectionModel().setSelectionInterval(0, 0);
+
+            dialog.setSize(800, 570);
+            dialog.setLocationRelativeTo(this);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.setVisible(true);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private String emptyNull(String s) {
+        return (s == null || s.isEmpty()) ? "(not provided)" : s;
+    }
+
+    private void loadPatientsTable(JTable patientTable) {
+        DefaultTableModel model = (DefaultTableModel) patientTable.getModel();
+        model.setRowCount(0);
+        try {
+            List<String[]> patients = doctorService.getDistinctPatientsForDoctor(doctorId);
+            if (patients == null || patients.isEmpty()) {
+                model.addRow(new Object[]{"No previous patients", "", ""});
+                return;
+            }
+            for (String[] p : patients) {
+                String username = p[0];
+                int count = 0;
+                String lastVisit = "";
+                List<String[]> notes = doctorService.getConsultationNotesByPatient(username);
+                if (notes != null && !notes.isEmpty()) {
+                    count = notes.size();
+                    lastVisit = notes.get(0)[2] + " " + (notes.get(0)[3] != null ? notes.get(0)[3] : "");
+                }
+                model.addRow(new Object[]{username, count, lastVisit});
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }

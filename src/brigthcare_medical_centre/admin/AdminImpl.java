@@ -316,7 +316,7 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
         if ("DOCTOR".equals(snapshot.role)) {
             Integer doctorId = getDoctorIdByUsername(conn, snapshot.username);
             if (doctorId != null && doctorHasDependencies(conn, doctorId)) {
-                throw new SQLException("Doctor accounts with schedules or appointments cannot be re-assigned.");
+                throw new SQLException("Doctor accounts with scheduled appointments or consultation records cannot be re-assigned.");
             }
         }
 
@@ -364,8 +364,8 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
 
             if (doctorHasDependencies(conn, doctorId)) {
                 throw new SQLException(deletingUser
-                        ? "Cannot delete a doctor user with schedules or appointments."
-                        : "Doctor accounts with schedules or appointments cannot be re-assigned.");
+                        ? "Cannot delete a doctor user with scheduled appointments or consultation records."
+                        : "Doctor accounts with scheduled appointments or consultation records cannot be re-assigned.");
             }
 
             try (PreparedStatement schedulePs = conn.prepareStatement(
@@ -391,9 +391,12 @@ public class AdminImpl extends UnicastRemoteObject implements AdminInterface {
     }
 
     private boolean doctorHasDependencies(Connection conn, int doctorId) throws SQLException {
+        // A doctor with only future availability slots (DOCTOR_SCHEDULE) is not
+        // locked in: the schedule is cleaned up as part of the role change or
+        // deletion. Only real commitments (appointments, consultation records)
+        // protect the account from being re-assigned or removed.
         return count(conn, "SELECT COUNT(*) FROM APPOINTMENTS WHERE DoctorID = ?", doctorId) > 0
-                || count(conn, "SELECT COUNT(*) FROM CONSULTATION_NOTES WHERE DoctorID = ?", doctorId) > 0
-                || count(conn, "SELECT COUNT(*) FROM DOCTOR_SCHEDULE WHERE DoctorID = ?", doctorId) > 0;
+                || count(conn, "SELECT COUNT(*) FROM CONSULTATION_NOTES WHERE DoctorID = ?", doctorId) > 0;
     }
 
     private boolean userHasPatientHistory(Connection conn, String username) throws SQLException {

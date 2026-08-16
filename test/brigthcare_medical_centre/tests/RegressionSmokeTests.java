@@ -7,9 +7,11 @@ import brigthcare_medical_centre.database.DerbyConnection;
 import brigthcare_medical_centre.database.DoctorDB;
 import brigthcare_medical_centre.database.PatientDB;
 import brigthcare_medical_centre.report.ReportGenerator;
+import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
 import java.util.List;
 
 public class RegressionSmokeTests {
@@ -23,6 +25,7 @@ public class RegressionSmokeTests {
         run("patient cancellation ownership", RegressionSmokeTests::testPatientCancellationOwnershipAndRestore);
         run("doctor reschedule and slot guardrails", RegressionSmokeTests::testDoctorRescheduleAndScheduleGuards);
         run("admin role provisioning", RegressionSmokeTests::testAdminProvisioningAndCleanup);
+        run("doctor role change with schedule only", RegressionSmokeTests::testDoctorRoleChangeWithScheduleOnly);
         run("report schema compatibility", RegressionSmokeTests::testReportQueriesAgainstActualSchema);
 
         System.out.println("All regression smoke tests passed.");
@@ -32,7 +35,7 @@ public class RegressionSmokeTests {
     private static void testBookingIntegrity() throws Exception {
         DoctorDB doctorDB = new DoctorDB();
         PatientDB patientDB = new PatientDB();
-        String date = "2026-03-03";
+        String date = futureDate(7);
         String time = "09:00";
 
         assertTrue(doctorDB.updateDoctorSchedule(1, date, time, true),
@@ -48,7 +51,7 @@ public class RegressionSmokeTests {
     private static void testPatientCancellationOwnershipAndRestore() throws Exception {
         DoctorDB doctorDB = new DoctorDB();
         PatientDB patientDB = new PatientDB();
-        String date = "2026-03-03";
+        String date = futureDate(7);
         String time = "10:00";
 
         assertTrue(doctorDB.updateDoctorSchedule(1, date, time, true),
@@ -70,7 +73,7 @@ public class RegressionSmokeTests {
     private static void testDoctorRescheduleAndScheduleGuards() throws Exception {
         DoctorDB doctorDB = new DoctorDB();
         PatientDB patientDB = new PatientDB();
-        String date = "2026-03-03";
+        String date = futureDate(7);
         String originalTime = "11:00";
         String newTime = "13:00";
 
@@ -131,11 +134,57 @@ public class RegressionSmokeTests {
                 "Expected the deleted patient profile to disappear from PATIENTS.");
     }
 
+    private static void testDoctorRoleChangeWithScheduleOnly() throws Exception {
+        AdminImpl admin = new AdminImpl();
+        DoctorDB doctorDB = new DoctorDB();
+        PatientDB patientDB = new PatientDB();
+        String suffix = String.valueOf(System.currentTimeMillis());
+        String date = futureDate(9);
+
+        String scheduleOnlyDoctor = "sched_doctor_" + suffix;
+        assertTrue(admin.registerUser(scheduleOnlyDoctor, "doctor123", UserRole.DOCTOR),
+                "Expected a schedule-only doctor account to be registered.");
+        int scheduleOnlyDoctorId = doctorDB.getDoctorIdByUsername(scheduleOnlyDoctor);
+        assertTrue(scheduleOnlyDoctorId > 0, "Expected a DOCTORS row for the schedule-only doctor.");
+        assertTrue(doctorDB.updateDoctorSchedule(scheduleOnlyDoctorId, date, "09:00", true),
+                "Expected a schedule slot to be created for the schedule-only doctor.");
+
+        int scheduleOnlyUserId = findUserId(scheduleOnlyDoctor);
+        assertTrue(admin.updateUserRole(scheduleOnlyUserId, UserRole.RECEPTIONIST),
+                "Expected a doctor with only schedule slots to be re-assignable.");
+        assertEquals("RECEPTIONIST", getUserRole(scheduleOnlyDoctor),
+                "Expected the schedule-only doctor role to change in USERS.");
+        assertEquals(-1, doctorDB.getDoctorIdByUsername(scheduleOnlyDoctor),
+                "Expected the schedule-only doctor profile to be removed after the role change.");
+
+        String activeDoctor = "active_doctor_" + suffix;
+        assertTrue(admin.registerUser(activeDoctor, "doctor123", UserRole.DOCTOR),
+                "Expected an active doctor account to be registered.");
+        int activeDoctorId = doctorDB.getDoctorIdByUsername(activeDoctor);
+        assertTrue(activeDoctorId > 0, "Expected a DOCTORS row for the active doctor.");
+        assertTrue(doctorDB.updateDoctorSchedule(activeDoctorId, date, "10:00", true),
+                "Expected a schedule slot to be created for the active doctor.");
+        assertTrue(patientDB.bookAppointment("patient1", activeDoctorId, date, "10:00"),
+                "Expected an appointment to be booked for the active doctor.");
+
+        int activeDoctorUserId = findUserId(activeDoctor);
+        try {
+            boolean result = admin.updateUserRole(activeDoctorUserId, UserRole.RECEPTIONIST);
+            throw new AssertionError(
+                    "Expected role change to be blocked for a doctor with an active appointment, but it returned: " + result);
+        } catch (RemoteException expected) {
+            assertTrue(expected.getMessage().contains("cannot be re-assigned"),
+                    "Expected the guard message to explain the blocked role change.");
+        }
+        assertEquals("DOCTOR", getUserRole(activeDoctor),
+                "Expected the active doctor role to remain unchanged.");
+    }
+
     private static void testReportQueriesAgainstActualSchema() throws Exception {
         DoctorDB doctorDB = new DoctorDB();
         PatientDB patientDB = new PatientDB();
         ReportGenerator generator = new ReportGenerator();
-        String date = "2026-03-04";
+        String date = futureDate(8);
         String time = "09:00";
 
         assertTrue(doctorDB.updateDoctorSchedule(1, date, time, true),
@@ -150,17 +199,22 @@ public class RegressionSmokeTests {
                 "Flu", "Rest", "Paracetamol", "Recovered"),
                 "Expected consultation notes to complete the appointment.");
 
-        List<String[]> monthly = generator.generateMonthlyAppointments("2026-03-01", "2026-03-31");
+        String startDate = LocalDate.now().toString();
+        List<String[]> monthly = generator.generateMonthlyAppointments(startDate, date);
         assertContains(monthly, 0, String.valueOf(appointmentId),
                 "Expected monthly appointments report to include the completed appointment.");
 
-        List<String[]> consultations = generator.generateDoctorConsultations("2026-03-01", "2026-03-31");
+        List<String[]> consultations = generator.generateDoctorConsultations(startDate, date);
         assertContains(consultations, 0, "1",
                 "Expected doctor consultations report to include doctor 1.");
 
-        List<String[]> visits = generator.generatePatientVisits("2026-03-01", "2026-03-31");
+        List<String[]> visits = generator.generatePatientVisits(startDate, date);
         assertContains(visits, 1, "patient1",
                 "Expected patient visits report to include patient1.");
+    }
+
+    private static String futureDate(int offsetDays) {
+        return LocalDate.now().plusDays(offsetDays).toString();
     }
 
     private static int findAppointmentId(String username, int doctorId, String date, String time) throws Exception {
