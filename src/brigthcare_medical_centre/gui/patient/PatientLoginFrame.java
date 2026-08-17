@@ -36,9 +36,7 @@ public class PatientLoginFrame extends JFrame {
     private void buildUI() {
         setTitle("BrightCare Medical Centre - Patient Login");
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int frameWidth = Math.max(420, (int) (screenSize.width * 0.28));
-        int frameHeight = Math.max(620, (int) (screenSize.height * 0.65));
-        setSize(frameWidth, frameHeight);
+        int frameWidth = Math.max(440, (int) (screenSize.width * 0.28));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(41, 128, 185));
@@ -100,6 +98,7 @@ public class PatientLoginFrame extends JFrame {
 
         usernameField = new JTextField();
         usernameField.setFont(new Font("Arial", Font.PLAIN, 17));
+        usernameField.setPreferredSize(new Dimension(frameWidth - 130, 45));
         usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
         usernameField.setBorder(BorderFactory.createCompoundBorder(
@@ -115,6 +114,7 @@ public class PatientLoginFrame extends JFrame {
 
         passwordField = new JPasswordField();
         passwordField.setFont(new Font("Arial", Font.PLAIN, 17));
+        passwordField.setPreferredSize(new Dimension(frameWidth - 130, 45));
         passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordField.setBorder(BorderFactory.createCompoundBorder(
@@ -184,6 +184,13 @@ public class PatientLoginFrame extends JFrame {
         loginBtn.addActionListener(e -> doLogin());
         passwordField.addActionListener(e -> doLogin());
 
+        // Let Swing calculate the exact size needed so no content is clipped
+        pack();
+        // Enforce a sensible minimum width after packing
+        if (getWidth() < frameWidth) {
+            setSize(frameWidth, getHeight());
+        }
+        setMinimumSize(new Dimension(frameWidth, getHeight()));
         setLocationRelativeTo(null);
         setVisible(true);
 
