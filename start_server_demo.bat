@@ -7,13 +7,18 @@ rem  BrightCare Medical Centre - 3-Tier Demo
 rem  TIER 2 : APPLICATION / RMI SERVER
 rem  Run this on the APPLICATION (server) device.
 rem
-rem  >>> CHANGE THESE TWO IP ADDRESSES TO MATCH YOUR NETWORK <<<
+rem  >>> EDIT demo.properties IN THE PROJECT ROOT TO MATCH YOUR NETWORK <<<
 rem    DB_SERVER_IP  -> IP of the machine running start_db_server_demo.bat
 rem    RMI_SERVER_IP -> IP of THIS machine (must be reachable by clients)
 rem ============================================================
 
-set DB_SERVER_IP=192.168.100.45
-set RMI_SERVER_IP=192.168.100.103
+if not exist "demo.properties" (
+    echo Missing demo.properties in the project root.
+    echo Please create it with DB_SERVER_IP and RMI_SERVER_IP.
+    pause
+    exit /b 1
+)
+for /f "tokens=1,2 delims==" %%A in (demo.properties) do set %%A=%%B
 
 set CLASSES=build\classes
 rem Derby client driver + shared libs used to reach the remote database tier.

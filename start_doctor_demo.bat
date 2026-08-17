@@ -7,10 +7,16 @@ rem  BrightCare Medical Centre - 3-Tier Demo
 rem  TIER 3 : CLIENT
 rem  Run this on the CLIENT device.
 rem
-rem  >>> CHANGE THIS IP TO THE MACHINE RUNNING start_server_demo.bat <<<
+rem  >>> EDIT demo.properties IN THE PROJECT ROOT: RMI_SERVER_IP = MACHINE RUNNING start_server_demo.bat <<<
 rem ============================================================
 
-set RMI_SERVER_IP=192.168.100.103
+if not exist "demo.properties" (
+    echo Missing demo.properties in the project root. Cannot determine RMI_SERVER_IP.
+    pause
+    exit /b 1
+)
+for /f "tokens=1,2 delims==" %%A in (demo.properties) do set %%A=%%B
+
 set CLASSES=build\classes
 
 if not exist "%CLASSES%" (
