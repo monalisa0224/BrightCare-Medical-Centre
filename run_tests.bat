@@ -34,6 +34,8 @@ if "!HAS_JUNIT!"=="1" (
         brigthcare_medical_centre.admin.AdminIntegrationTest ^
         brigthcare_medical_centre.report.ReportTest ^
         brigthcare_medical_centre.report.ReportIntegrationTest ^
+        brigthcare_medical_centre.doctor.DoctorTest ^
+        brigthcare_medical_centre.doctor.DoctorIntegrationTest ^
         brigthcare_medical_centre.util.DateUtilsTest ^
         brigthcare_medical_centre.database.PasswordHashTest
     if errorlevel 1 exit /b 1
