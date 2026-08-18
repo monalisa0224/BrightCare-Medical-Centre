@@ -506,7 +506,7 @@ private void doBookAppointment() {
                     slotButtonPanel.add(empty);
                 } else {
                     for (String slot : slots) {
-                        JButton slotBtn = new JButton(slot);
+                        JButton slotBtn = new JButton(formatAmPm(slot));
                         slotBtn.setFont(new Font("Arial", Font.BOLD, 17));
                         slotBtn.setBackground(new Color(200, 255, 200));
                         slotBtn.setForeground(new Color(39, 174, 96));
@@ -528,7 +528,7 @@ private void doBookAppointment() {
                             slotBtn.setForeground(Color.WHITE);
                             selectedTime[0] = slot;
                             selectedSlotLabel.setText(
-                                "Selected:  " + slot + "  on  " + selectedDate[0]);
+                                "Selected:  " + formatAmPm(slot) + "  on  " + selectedDate[0]);
                             selectedSlotLabel.setForeground(new Color(39, 174, 96));
                             selectedSlotLabel.setFont(
                                 new Font("Arial", Font.BOLD, 16));
@@ -556,7 +556,7 @@ private void doBookAppointment() {
                 "Confirm your booking?\n\n"
                 + "Doctor : " + doctorName + "\n"
                 + "Date   : " + selectedDate[0] + "\n"
-                + "Time   : " + selectedTime[0] + "\n\n"
+                + "Time   : " + formatAmPm(selectedTime[0]) + "\n\n"
                 + "Status will be PENDING until doctor approves.",
                 "Confirm Booking", JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
@@ -570,7 +570,7 @@ private void doBookAppointment() {
                         "Appointment booked successfully!\n\n"
                         + "Doctor : " + doctorName + "\n"
                         + "Date   : " + selectedDate[0] + "\n"
-                        + "Time   : " + selectedTime[0] + "\n"
+                        + "Time   : " + formatAmPm(selectedTime[0]) + "\n"
                         + "Status : PENDING (awaiting doctor approval)",
                         "Booking Successful", JOptionPane.INFORMATION_MESSAGE);
                     dialog.dispose();
@@ -1275,10 +1275,25 @@ private JLabel makeBadge(String text, Color color) {
 
                     try {
                         List<String> available = patientService.checkDoctorAvailability(doctorId, date);
+
+                        // ── REAL-TIME CLOCK: block past slots on today ──
+                        java.util.Calendar now = java.util.Calendar.getInstance();
+                        String todayStr = sdf.format(now.getTime());
+                        int currentHour   = now.get(java.util.Calendar.HOUR_OF_DAY);
+                        int currentMinute = now.get(java.util.Calendar.MINUTE);
+
                         for (String slot : timeSlots) {
-                            if (available.contains(slot)) {
+                            // Parse the slot's start time (e.g. "09:00" → h=9, m=0)
+                            int slotHour   = Integer.parseInt(slot.split(":")[0]);
+                            int slotMinute = Integer.parseInt(slot.split(":")[1]);
+                            // Past if it's today AND current clock has reached or passed the slot
+                            boolean isPast = date.equals(todayStr) &&
+                                (currentHour > slotHour ||
+                                 (currentHour == slotHour && currentMinute >= slotMinute));
+
+                            if (available.contains(slot) && !isPast) {
                                 // Available — clickable green chip
-                                JButton slotChip = new JButton(slot);
+                                JButton slotChip = new JButton(formatAmPm(slot));
                                 slotChip.setFont(new Font("Arial", Font.BOLD, 16));
                                 slotChip.setBackground(new Color(39, 174, 96));
                                 slotChip.setForeground(Color.WHITE);
@@ -1303,7 +1318,7 @@ private JLabel makeBadge(String text, Color color) {
                                         "Book this appointment?\n\n"
                                         + "Doctor : " + doctorName + "\n"
                                         + "Date   : " + date + "\n"
-                                        + "Time   : " + slot + "\n\n"
+                                        + "Time   : " + formatAmPm(slot) + "\n\n"
                                         + "Status will be PENDING until doctor approves.",
                                         "Confirm Booking",
                                         JOptionPane.YES_NO_OPTION,
@@ -1317,7 +1332,7 @@ private JLabel makeBadge(String text, Color color) {
                                                 "Appointment booked!\n\n"
                                                 + "Doctor : " + doctorName + "\n"
                                                 + "Date   : " + date + "\n"
-                                                + "Time   : " + slot + "\n"
+                                                + "Time   : " + formatAmPm(slot) + "\n"
                                                 + "Status : PENDING",
                                                 "Success", JOptionPane.INFORMATION_MESSAGE);
                                             dialog.dispose();
@@ -1521,6 +1536,23 @@ private JLabel makeLegendChip(String text, Color fg, Color bg) {
         JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
     }
 }
+
+    /**
+     * Converts a 24-hour "HH:mm" time string to a 12-hour AM/PM display string.
+     * e.g. "09:00" → "9:00 AM",  "14:00" → "2:00 PM"
+     */
+    private String formatAmPm(String time24) {
+        try {
+            int hour   = Integer.parseInt(time24.split(":")[0]);
+            int minute = Integer.parseInt(time24.split(":")[1]);
+            String ampm  = hour < 12 ? "AM" : "PM";
+            int hour12   = hour % 12;
+            if (hour12 == 0) hour12 = 12;
+            return String.format("%d:%02d %s", hour12, minute, ampm);
+        } catch (Exception e) {
+            return time24; // fallback: return original string unchanged
+        }
+    }
 
     // Helper for profile rows
     private JPanel makeProfileRow(String label, String value, String icon, Color color) {
