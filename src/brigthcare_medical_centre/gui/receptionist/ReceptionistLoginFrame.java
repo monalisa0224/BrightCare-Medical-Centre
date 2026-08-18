@@ -140,7 +140,7 @@ public class ReceptionistLoginFrame extends JFrame {
                 dispose(); // Close the login screen
                 
                 // Open the Receptionist Dashboard
-                new ReceptionistDashboardFrame().setVisible(true);
+                new ReceptionistDashboardFrame(receptionistService).setVisible(true);
                 
             } else {
                 JOptionPane.showMessageDialog(this,

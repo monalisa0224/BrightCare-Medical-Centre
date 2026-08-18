@@ -12,7 +12,7 @@ public class ReceptionistDashboardFrame extends JFrame {
     private ReceptionistInterface receptionistService;
 
     // GUI Components for Registration
-    private JTextField txtUsername, txtPassword, txtContact, txtAddress;
+    private JTextField txtUsername, txtPassword, txtFirstName, txtLastName, txtIcPassport, txtContact, txtAddress;
 
     // GUI Components for Management
     private JTable patientTable;
@@ -20,8 +20,12 @@ public class ReceptionistDashboardFrame extends JFrame {
     private JTextField txtSearch;
 
     public ReceptionistDashboardFrame() {
+        this(null);
+    }
+
+    public ReceptionistDashboardFrame(ReceptionistInterface receptionistService) {
         super("BrightCare Clinic - Receptionist Portal");
-        
+        this.receptionistService = receptionistService;
         initUI();
         refreshPatientTable();
     }
@@ -73,10 +77,16 @@ public class ReceptionistDashboardFrame extends JFrame {
 
         txtUsername = new JTextField(20);
         txtPassword = new JTextField(20);
+        txtFirstName = new JTextField(20);
+        txtLastName = new JTextField(20);
+        txtIcPassport = new JTextField(20);
         txtContact = new JTextField(20);
         txtAddress = new JTextField(20);
 
         int row = 0;
+        addFormField(panel, "First Name:", txtFirstName, gbc, row++);
+        addFormField(panel, "Last Name:", txtLastName, gbc, row++);
+        addFormField(panel, "IC/Passport Number:", txtIcPassport, gbc, row++);
         addFormField(panel, "Patient Username:", txtUsername, gbc, row++);
         addFormField(panel, "Temporary Password:", txtPassword, gbc, row++);
         addFormField(panel, "Contact Number:", txtContact, gbc, row++);
@@ -109,10 +119,14 @@ public class ReceptionistDashboardFrame extends JFrame {
 
         String username = txtUsername.getText().trim();
         String password = txtPassword.getText().trim();
+        String firstName = txtFirstName.getText().trim();
+        String lastName = txtLastName.getText().trim();
+        String icPassport = txtIcPassport.getText().trim();
         String contact = txtContact.getText().trim();
         String address = txtAddress.getText().trim();
 
-        if (username.isEmpty() || password.isEmpty() || contact.isEmpty() || address.isEmpty()) {
+        if (username.isEmpty() || password.isEmpty() || firstName.isEmpty() || lastName.isEmpty()
+                || icPassport.isEmpty() || contact.isEmpty() || address.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "Registration Failed: All fields must be filled out before registering a patient.", 
                 "Missing Information", JOptionPane.WARNING_MESSAGE);
@@ -121,17 +135,20 @@ public class ReceptionistDashboardFrame extends JFrame {
 
         try {
             PatientInfo newPatient = new PatientInfo(
-                username, password, contact, address
+                username, password, firstName, lastName, icPassport, contact, address
             );
 
             boolean success = receptionistService.registerPatient(newPatient);
 
             if (success) {
+                String medicalRecordId = findMedicalRecordId(username);
                 JOptionPane.showMessageDialog(this, 
-                    "Patient " + txtUsername.getText() + " successfully registered!",
+                    "Patient " + username + " successfully registered!\nMedical Record ID: "
+                            + (medicalRecordId == null ? "Available in the patient list after refresh." : medicalRecordId),
                     "Registration Success", JOptionPane.INFORMATION_MESSAGE);
                 
-                txtUsername.setText(""); txtPassword.setText("");
+                txtUsername.setText(""); txtPassword.setText(""); txtFirstName.setText(""); txtLastName.setText("");
+                txtIcPassport.setText("");
                 txtContact.setText(""); txtAddress.setText("");
                 refreshPatientTable();
             } else {
@@ -140,6 +157,16 @@ public class ReceptionistDashboardFrame extends JFrame {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Server Error: " + ex.getMessage());
         }
+    }
+
+    private String findMedicalRecordId(String username) throws Exception {
+        List<PatientInfo> patients = receptionistService.searchPatient(username);
+        for (PatientInfo patient : patients) {
+            if (username.equals(patient.getUsername())) {
+                return patient.getMedicalRecordId();
+            }
+        }
+        return null;
     }
 
     private JPanel createManagementPanel() {
@@ -158,7 +185,7 @@ public class ReceptionistDashboardFrame extends JFrame {
         // Logout removed from here!
         panel.add(topPanel, BorderLayout.NORTH);
 
-        String[] columns = {"Patient ID", "Username", "Contact Number", "Address"};
+        String[] columns = {"Patient ID", "Username", "First Name", "Last Name", "IC/Passport Number", "Medical Record ID", "Contact Number", "Address"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; } 
@@ -200,15 +227,26 @@ public class ReceptionistDashboardFrame extends JFrame {
         // 1. Grab current data from the table
         int patientId = (int) tableModel.getValueAt(selectedRow, 0); 
         String username = (String) tableModel.getValueAt(selectedRow, 1);
-        String currentContact = (String) tableModel.getValueAt(selectedRow, 2);
-        String currentAddress = (String) tableModel.getValueAt(selectedRow, 3);
+        String currentFirstName = (String) tableModel.getValueAt(selectedRow, 2);
+        String currentLastName = (String) tableModel.getValueAt(selectedRow, 3);
+        String currentIcPassport = (String) tableModel.getValueAt(selectedRow, 4);
+        String currentMedicalRecord = (String) tableModel.getValueAt(selectedRow, 5);
+        String currentContact = (String) tableModel.getValueAt(selectedRow, 6);
+        String currentAddress = (String) tableModel.getValueAt(selectedRow, 7);
 
         // 2. Create editable text fields pre-filled with the old data
+        JTextField fieldFirstName = new JTextField(currentFirstName);
+        JTextField fieldLastName = new JTextField(currentLastName);
+        JTextField fieldIcPassport = new JTextField(currentIcPassport);
         JTextField fieldContact = new JTextField(currentContact);
         JTextField fieldAddress = new JTextField(currentAddress);
 
         Object[] message = {
             "Username (Read-Only): " + username,
+            "First Name:", fieldFirstName,
+            "Last Name:", fieldLastName,
+            "IC/Passport Number:", fieldIcPassport,
+            "Medical Record ID (System Generated): " + currentMedicalRecord,
             "Contact Number:", fieldContact,
             "Address:", fieldAddress
         };
@@ -219,7 +257,10 @@ public class ReceptionistDashboardFrame extends JFrame {
         if (option == JOptionPane.OK_OPTION) {
             try {
                 // 4. Pack the new data into a PatientInfo box
-                PatientInfo updatedPatient = new PatientInfo(patientId, username, fieldContact.getText(), fieldAddress.getText());
+                PatientInfo updatedPatient = new PatientInfo(patientId, username,
+                        fieldFirstName.getText().trim(), fieldLastName.getText().trim(),
+                        fieldIcPassport.getText().trim(), currentMedicalRecord,
+                        fieldContact.getText().trim(), fieldAddress.getText().trim());
                 
                 // 5. Send to Server!
                 boolean success = receptionistService.updatePatient(updatedPatient);
@@ -269,7 +310,8 @@ public class ReceptionistDashboardFrame extends JFrame {
         tableModel.setRowCount(0); 
         for (PatientInfo p : patients) {
             tableModel.addRow(new Object[]{
-                p.getId(), p.getUsername(), p.getContactNumber(), p.getAddress()
+                p.getId(), p.getUsername(), p.getFirstName(), p.getLastName(), p.getIcPassportNumber(),
+                p.getMedicalRecordId(), p.getContactNumber(), p.getAddress()
             });
         }
     }
