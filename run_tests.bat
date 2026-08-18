@@ -37,7 +37,8 @@ if "!HAS_JUNIT!"=="1" (
         brigthcare_medical_centre.doctor.DoctorTest ^
         brigthcare_medical_centre.doctor.DoctorIntegrationTest ^
         brigthcare_medical_centre.util.DateUtilsTest ^
-        brigthcare_medical_centre.database.PasswordHashTest
+        brigthcare_medical_centre.database.PasswordHashTest ^
+        brigthcare_medical_centre.doctor.DoctorTransactionalACIDTest
     if errorlevel 1 exit /b 1
 ) else (
     set "LIBS=!DERBY_LIB!"
