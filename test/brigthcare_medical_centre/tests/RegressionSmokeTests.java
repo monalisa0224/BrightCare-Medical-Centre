@@ -2,16 +2,20 @@ package brigthcare_medical_centre.tests;
 
 import brigthcare_medical_centre.admin.AdminImpl;
 import brigthcare_medical_centre.auth.UserRole;
+import brigthcare_medical_centre.auth.AuthenticationImpl;
 import brigthcare_medical_centre.database.DatabaseSetup;
 import brigthcare_medical_centre.database.DerbyConnection;
 import brigthcare_medical_centre.database.DoctorDB;
 import brigthcare_medical_centre.database.PatientDB;
+import brigthcare_medical_centre.database.ReceptionistDB;
+import brigthcare_medical_centre.common.PatientInfo;
 import brigthcare_medical_centre.report.ReportGenerator;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.List;
 
 public class RegressionSmokeTests {
@@ -22,6 +26,7 @@ public class RegressionSmokeTests {
         DatabaseSetup.initialize();
 
         run("booking integrity", RegressionSmokeTests::testBookingIntegrity);
+        run("receptionist patient registration details", RegressionSmokeTests::testReceptionistPatientRegistrationDetails);
         run("patient cancellation ownership", RegressionSmokeTests::testPatientCancellationOwnershipAndRestore);
         run("doctor reschedule and slot guardrails", RegressionSmokeTests::testDoctorRescheduleAndScheduleGuards);
         run("admin role provisioning", RegressionSmokeTests::testAdminProvisioningAndCleanup);
@@ -46,6 +51,44 @@ public class RegressionSmokeTests {
                 "Expected a duplicate booking for the same slot to fail.");
         assertFalse(patientDB.getDoctorAvailability(1, date).contains(time),
                 "Expected the booked slot to disappear from availability.");
+    }
+
+    private static void testReceptionistPatientRegistrationDetails() throws Exception {
+        String suffix = String.valueOf(System.currentTimeMillis());
+        String username = "john_tan_" + suffix;
+        String secondUsername = "jane_tan_" + suffix;
+        PatientInfo patient = new PatientInfo(username, "patient123", "John", "Tan",
+                "900101-14-1234", "0123456789", "Kuala Lumpur");
+        PatientInfo secondPatient = new PatientInfo(secondUsername, "patient123", "Jane", "Tan",
+                "900101-14-1235", "0123456790", "Kuala Lumpur");
+
+        assertTrue(new ReceptionistDB().registerPatient(patient),
+                "Expected receptionist registration without a medical record ID to succeed.");
+        assertTrue(new ReceptionistDB().registerPatient(secondPatient),
+                "Expected a second receptionist registration to succeed.");
+        assertTrue(patient.getMedicalRecordId().matches("MR-\\d{4}-\\d{4,}"),
+                "Expected a readable system-generated medical record ID.");
+        assertFalse(patient.getMedicalRecordId().equals(secondPatient.getMedicalRecordId()),
+                "Generated medical record IDs must be unique.");
+        assertNotNull(new AuthenticationImpl().login(username, "patient123"),
+                "Expected the newly registered patient to be able to log in.");
+        try (Connection conn = DerbyConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT FirstName, LastName, ICPassportNumber, MedicalRecordID, ContactNumber, Address "
+                     + "FROM PATIENTS WHERE Username = ?")) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "Expected the registered patient profile row.");
+                assertEquals("John", rs.getString("FirstName"), "First name was not stored.");
+                assertEquals("Tan", rs.getString("LastName"), "Last name was not stored.");
+                assertEquals("900101-14-1234", rs.getString("ICPassportNumber"), "IC/passport was not stored.");
+                assertEquals(patient.getMedicalRecordId(), rs.getString("MedicalRecordID"), "Generated medical record ID was not stored.");
+                assertTrue(rs.getString("MedicalRecordID").startsWith("MR-" + Year.now().getValue() + "-"),
+                        "Medical record ID used the wrong year.");
+                assertEquals("0123456789", rs.getString("ContactNumber"), "Contact number was not stored.");
+                assertEquals("Kuala Lumpur", rs.getString("Address"), "Address was not stored.");
+            }
+        }
     }
 
     private static void testPatientCancellationOwnershipAndRestore() throws Exception {

@@ -63,11 +63,19 @@ public class DatabaseSetup {
             stmt.execute("CREATE TABLE PATIENTS ("
                     + "PatientID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, "
                     + "Username VARCHAR(50) UNIQUE NOT NULL, "
+                    + "FirstName VARCHAR(50), "
+                    + "LastName VARCHAR(50), "
+                    + "ICPassportNumber VARCHAR(50), "
+                    + "MedicalRecordID VARCHAR(50), "
                     + "ContactNumber VARCHAR(20), "
                     + "Address VARCHAR(200), "
                     + "FOREIGN KEY (Username) REFERENCES USERS(Username))");
             System.out.println("Created table: PATIENTS");
         }
+        addPatientColumnIfMissing(stmt, "FirstName", "VARCHAR(50)");
+        addPatientColumnIfMissing(stmt, "LastName", "VARCHAR(50)");
+        addPatientColumnIfMissing(stmt, "ICPassportNumber", "VARCHAR(50)");
+        addPatientColumnIfMissing(stmt, "MedicalRecordID", "VARCHAR(50)");
 
         if (!tableExists("DOCTORS")) {
             stmt.execute("CREATE TABLE DOCTORS ("
@@ -156,6 +164,14 @@ public class DatabaseSetup {
         return exists;
     }
 
+    /** Adds nullable fields only, so established databases and admin-created profiles remain usable. */
+    private static void addPatientColumnIfMissing(Statement stmt, String columnName, String definition) throws Exception {
+        if (!columnExists("PATIENTS", columnName)) {
+            stmt.execute("ALTER TABLE PATIENTS ADD COLUMN " + columnName + " " + definition);
+            System.out.println("Added " + columnName + " column to PATIENTS");
+        }
+    }
+
     private static void seedAdmin() throws Exception {
         Connection conn = DerbyConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM USERS WHERE Username = ?");
@@ -186,15 +202,19 @@ public class DatabaseSetup {
             try (PreparedStatement insert = conn.prepareStatement(
                     "INSERT INTO USERS (Username, PasswordHash, Role) VALUES (?, ?, ?)");
                  PreparedStatement insertPatient = conn.prepareStatement(
-                    "INSERT INTO PATIENTS (Username, ContactNumber, Address) VALUES (?, ?, ?)")) {
+                    "INSERT INTO PATIENTS (Username, FirstName, LastName, ICPassportNumber, MedicalRecordID, ContactNumber, Address) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
             insert.setString(1, "patient1");
             insert.setString(2, hashPassword("patient123"));
             insert.setString(3, "PATIENT");
             insert.executeUpdate();
 
             insertPatient.setString(1, "patient1");
-            insertPatient.setString(2, "0123456789");
-            insertPatient.setString(3, "Kuala Lumpur");
+            insertPatient.setString(2, "Test");
+            insertPatient.setString(3, "Patient");
+            insertPatient.setString(4, "900101-14-0000");
+            insertPatient.setString(5, "MR-TEST-0001");
+            insertPatient.setString(6, "0123456789");
+            insertPatient.setString(7, "Kuala Lumpur");
             insertPatient.executeUpdate();
             }
             System.out.println("Seeded test patient: patient1 / patient123");
