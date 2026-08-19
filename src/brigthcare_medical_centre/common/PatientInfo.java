@@ -14,9 +14,8 @@ public class PatientInfo implements Serializable {
     private String medicalRecordId;
     private String contactNumber;
     private String address;
-    private String password; // Used only during registration
+    private String password; 
 
-    // Constructor for registering a NEW patient
     public PatientInfo(String username, String password, String firstName, String lastName,
             String icPassportNumber, String contactNumber, String address) {
         this(username, password, firstName, lastName, icPassportNumber, null, contactNumber, address);
@@ -35,12 +34,10 @@ public class PatientInfo implements Serializable {
         this.address = address;
     }
 
-    /** Retained for callers compiled against the original registration DTO. */
     public PatientInfo(String username, String password, String contactNumber, String address) {
         this(username, password, null, null, null, null, contactNumber, address);
     }
 
-    // Constructor for fetching EXISTING patients (Password is hidden)
     public PatientInfo(int id, String username, String firstName, String lastName,
             String icPassportNumber, String medicalRecordId, String contactNumber, String address) {
         this.id = id;
@@ -53,7 +50,6 @@ public class PatientInfo implements Serializable {
         this.address = address;
     }
 
-    /** Retained for callers compiled against the original patient-list DTO. */
     public PatientInfo(int id, String username, String contactNumber, String address) {
         this(id, username, null, null, null, null, contactNumber, address);
     }

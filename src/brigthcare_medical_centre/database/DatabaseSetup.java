@@ -164,7 +164,6 @@ public class DatabaseSetup {
         return exists;
     }
 
-    /** Adds nullable fields only, so established databases and admin-created profiles remain usable. */
     private static void addPatientColumnIfMissing(Statement stmt, String columnName, String definition) throws Exception {
         if (!columnExists("PATIENTS", columnName)) {
             stmt.execute("ALTER TABLE PATIENTS ADD COLUMN " + columnName + " " + definition);

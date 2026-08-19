@@ -27,6 +27,7 @@ public class RegressionSmokeTests {
 
         run("booking integrity", RegressionSmokeTests::testBookingIntegrity);
         run("receptionist patient registration details", RegressionSmokeTests::testReceptionistPatientRegistrationDetails);
+        run("receptionist multi-field patient search", RegressionSmokeTests::testReceptionistMultiFieldSearch);
         run("patient cancellation ownership", RegressionSmokeTests::testPatientCancellationOwnershipAndRestore);
         run("doctor reschedule and slot guardrails", RegressionSmokeTests::testDoctorRescheduleAndScheduleGuards);
         run("admin role provisioning", RegressionSmokeTests::testAdminProvisioningAndCleanup);
@@ -111,6 +112,29 @@ public class RegressionSmokeTests {
                 "Expected the appointment status to change to CANCELLED.");
         assertTrue(patientDB.getDoctorAvailability(1, date).contains(time),
                 "Expected the slot to return to availability after cancellation.");
+    }
+
+    private static void testReceptionistMultiFieldSearch() throws Exception {
+        String suffix = String.valueOf(System.currentTimeMillis());
+        String username = "search_patient_" + suffix;
+        PatientInfo patient = new PatientInfo(username, "patient123", "SearchFirst", "SearchLast",
+                "IC-SEARCH-" + suffix, "0190000000", "Search Address");
+        ReceptionistDB receptionistDB = new ReceptionistDB();
+        assertTrue(receptionistDB.registerPatient(patient), "Expected searchable patient registration to succeed.");
+        assertSearchFinds(receptionistDB, username, username);
+        assertSearchFinds(receptionistDB, "SearchFirst", username);
+        assertSearchFinds(receptionistDB, "SearchLast", username);
+        assertSearchFinds(receptionistDB, "IC-SEARCH-" + suffix, username);
+        assertSearchFinds(receptionistDB, patient.getMedicalRecordId(), username);
+    }
+
+    private static void assertSearchFinds(ReceptionistDB receptionistDB, String keyword, String username) {
+        for (PatientInfo result : receptionistDB.searchPatient(keyword)) {
+            if (username.equals(result.getUsername())) {
+                return;
+            }
+        }
+        throw new AssertionError("Expected search for '" + keyword + "' to return " + username);
     }
 
     private static void testDoctorRescheduleAndScheduleGuards() throws Exception {
