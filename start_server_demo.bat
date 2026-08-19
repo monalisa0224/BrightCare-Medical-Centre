@@ -39,8 +39,11 @@ echo RMI host : %RMI_SERVER_IP%
 echo Database : jdbc:derby://%DB_SERVER_IP%:1527/BrightCareDB
 
 java -Dbrightcare.rmi.port=1099 ^
+     -Dbrightcare.receptionist.rmi.port=1100 ^
      -Dbrightcare.rmi.host=%RMI_SERVER_IP% ^
      -Dbrightcare.db.url=jdbc:derby://%DB_SERVER_IP%:1527/BrightCareDB;create=true ^
-     -Dbrightcare.ssl.enabled=false ^
+     -Dbrightcare.ssl.enabled=true ^
+     -Djavax.net.ssl.keyStore=server.jks ^
+     -Djavax.net.ssl.keyStorePassword=brightcare123 ^
      -cp "%CLASSES%;%DB_LIBS%" brigthcare_medical_centre.server.ServerDriver
 pause

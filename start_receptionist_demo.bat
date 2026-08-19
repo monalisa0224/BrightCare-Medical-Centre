@@ -9,8 +9,7 @@ rem  Run this on the CLIENT device.
 rem
 rem  >>> EDIT demo.properties IN THE PROJECT ROOT: RMI_SERVER_IP = MACHINE RUNNING start_server_demo.bat <<<
 rem
-rem  In plain (non-SSL) demo mode the receptionist connects to the same
-rem  plain RMI registry (port 1099) as the other roles.
+rem  The receptionist connects to the dedicated TLS RMI registry (port 1100).
 rem ============================================================
 
 if not exist "demo.properties" (
@@ -29,6 +28,11 @@ if not exist "%CLASSES%" (
     exit /b 1
 )
 
-echo Starting Receptionist GUI (connecting to %RMI_SERVER_IP%)...
-java -Dbrightcare.rmi.host=%RMI_SERVER_IP% -Dbrightcare.ssl.enabled=false -cp "%CLASSES%" brigthcare_medical_centre.gui.receptionist.ReceptionistLoginFrame
+echo Starting Receptionist GUI with TLS (connecting to %RMI_SERVER_IP%:1100)...
+java -Dbrightcare.rmi.host=%RMI_SERVER_IP% ^
+     -Dbrightcare.receptionist.rmi.port=1100 ^
+     -Dbrightcare.ssl.enabled=true ^
+     -Djavax.net.ssl.trustStore=clienttrust.jks ^
+     -Djavax.net.ssl.trustStorePassword=brightcare123 ^
+     -cp "%CLASSES%" brigthcare_medical_centre.gui.receptionist.ReceptionistLoginFrame
 pause
